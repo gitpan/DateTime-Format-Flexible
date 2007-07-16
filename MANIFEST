@@ -1,0 +1,10 @@
+MANIFEST
+README
+LICENSE
+TODO
+Changes
+Makefile.PL
+lib/DateTime/Format/Flexible.pm
+t/001_load.t
+t/002_parsing.t
+META.yml                                 Module meta-data (added by MakeMaker)
