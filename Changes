@@ -1,5 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.02 Tue Oct 02 01:50:00 2007
+   - fixed pod formatting
+   - added new parseable format: 2007-10-01 13:11:32.741804. thanks RKRIMEN
+
 0.01 Sun Jul 15 20:09:47 2007
     - original version; created by ExtUtils::ModuleMaker 0.49
 

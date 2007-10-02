@@ -7,6 +7,7 @@ WriteMakefile(
     NAME         => 'DateTime::Format::Flexible',
     VERSION_FROM => 'lib/DateTime/Format/Flexible.pm',
     AUTHOR       => 'Tom Heady (cpan@punch.net)',
+    LICENSE      => 'perl',
     ABSTRACT     => 'DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.',
     PREREQ_PM    => {
                      'Test::Simple'              => 0.44, # <-- auto added for tests

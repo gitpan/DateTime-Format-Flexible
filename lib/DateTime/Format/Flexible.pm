@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Readonly;
 use DateTime::Format::Builder;
@@ -196,6 +196,10 @@ my $formats =
  { length => [5,7],    params => [ qw( year doy ) ] ,                         regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\z} ,               postprocess => [ \&_fix_year , \&_fix_day_of_year ] } ,
  { length => [10..18], params => [ qw( year doy hour minute second ) ] ,      regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\z} ,         postprocess => [ \&_fix_year , \&_fix_day_of_year ] } ,
  { length => [12..21], params => [ qw( year doy hour minute second ampm ) ] , regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\s?$AMPM\z} , postprocess => [ \&_fix_year , \&_fix_day_of_year , \&_fix_ampm ]} ,
+
+ # nanoseconds. no length here, we do not know how many digits they will use for nanoseconds
+ {  params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)${HMS}${HMSDELIM}(\d+)\z} } ,
+
 ];
 
 DateTime::Format::Builder->create_class( parsers => { build => $formats } );
@@ -339,11 +343,11 @@ sub _fix_year
     my %args = @_;
     return 1 if( length( $args{parsed}{year} ) == 4 );
     my $now = DateTime->now;
-    $args{parsed}{year} = __PACKAGE__->pick_year( $args{parsed}{year} , $now );
+    $args{parsed}{year} = __PACKAGE__->_pick_year( $args{parsed}{year} , $now );
     return 1;
 }
 
-sub pick_year
+sub _pick_year
 {
     my ( $self , $year , $dt ) = @_;
 
@@ -409,25 +413,48 @@ method (build).
 my $dt = DateTime::Format::Flexible->build( $date );
 
 A small list of supported formats:
- YYYYMMDDTHHMMSS
- YYYYMMDDTHHMM
- YYYYMMDDTHH
- YYYYMMDD
- YYYYMM
- MM-DD-YYYY
- MM-D-YYYY
- MM-DD-YY
- M-DD-YY
- YYYY/DD/MM
- YYYY/M/DD
- YYYY/MM/D
- M-D
- MM-D           
- M-D-Y
- Month D, YYYY
- Mon D, YYYY
- Mon D, YYYY HH:MM:SS
- ...
+
+=over 4
+
+=item YYYYMMDDTHHMMSS
+
+=item  YYYYMMDDTHHMM
+
+=item  YYYYMMDDTHH
+
+=item  YYYYMMDD
+
+=item  YYYYMM
+
+=item  MM-DD-YYYY
+
+=item  MM-D-YYYY
+
+=item  MM-DD-YY
+
+=item  M-DD-YY
+
+=item  YYYY/DD/MM
+
+=item  YYYY/M/DD
+
+=item  YYYY/MM/D
+
+=item  M-D
+
+=item  MM-D
+
+=item  M-D-Y
+
+=item  Month D, YYYY
+
+=item  Mon D, YYYY
+
+=item  Mon D, YYYY HH:MM:SS
+
+=item  ...
+
+=back
 
 there are 2800+ variations that are detected correctly in the test file.
 

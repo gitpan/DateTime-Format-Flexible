@@ -6,5 +6,9 @@ Changes
 Makefile.PL
 lib/DateTime/Format/Flexible.pm
 t/001_load.t
-t/002_parsing.t
+t/002_pod.t
+t/003_podcoverage.t
+t/parsing.t
+t/nanoseconds.t
+example/parse_date.pl
 META.yml                                 Module meta-data (added by MakeMaker)

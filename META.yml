@@ -1,13 +1,16 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         DateTime-Format-Flexible
-version:      0.01
-version_from: lib/DateTime/Format/Flexible.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                DateTime-Format-Flexible
+version:             0.02
+abstract:            DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.
+license:             perl
+generated_by:        ExtUtils::MakeMaker version 6.36
+distribution_type:   module
+requires:     
     DateTime::Format::Builder:     0.74
     Readonly:                      0.06
     Test::Simple:                  0.44
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30_01
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
+    version: 1.2
+author:
+    - Tom Heady (cpan@punch.net)
