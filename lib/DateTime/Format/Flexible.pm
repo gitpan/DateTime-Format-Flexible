@@ -2,10 +2,12 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
+
+use base 'DateTime::Format::Builder';
 
 use Readonly;
-use DateTime::Format::Builder;
+use DateTime::TimeZone;
 
 Readonly my $DELIM  => qr{(?:\\|\/|-|\.|\s)};
 Readonly my $HMSDELIM => qr{(?:\.|:)};
@@ -199,10 +201,17 @@ my $formats =
 
  # nanoseconds. no length here, we do not know how many digits they will use for nanoseconds
  {  params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)${HMS}${HMSDELIM}(\d+)\z} } ,
-
 ];
 
 DateTime::Format::Builder->create_class( parsers => { build => $formats } );
+
+sub parse_datetime
+{
+    my $self = shift;
+    my ( $date ) = @_;
+
+    return $self->build( @_ );
+}
 
 sub _fix_day_of_year
 {
@@ -389,7 +398,7 @@ DateTime::Format::Flexible - DateTime::Format::Flexible - Flexibly parse strings
 =head1 SYNOPSIS
 
   use DateTime::Format::Flexible;
-  my $dt = DateTime::Format::Flexible->build( 'January 8, 1999' );
+  my $dt = DateTime::Format::Flexible->parse_datetime( 'January 8, 1999' );
   # $dt = a DateTime object set at 1999-01-08T00:00:00
 
 =head1 DESCRIPTION
@@ -400,17 +409,23 @@ this module is for you.
 
 It attempts to take any string you give it and parse it into a DateTime object.
 
-For supported string formats, see the test file.  If you can think of any that
-I do not cover, please let me know.
+The test file tests 3100+ variations of date/time strings.  If you can think of
+any that I do not cover, please let me know.
 
 =head1 USAGE
 
-This module uses F<DateTime::Format::Builder> under the covers.  It only has one
-method (build).
+This module uses F<DateTime::Format::Builder> under the covers.
 
-=head2 build
+=head2 build, parse_datetime
 
-my $dt = DateTime::Format::Flexible->build( $date );
+build and parse_datetime do the same thing.  Give it a string and it
+tries to return a DateTime object.
+
+If it can't it will throw an exception.
+
+ my $dt = DateTime::Format::Flexible->build( $date );
+
+ my $dt = DateTime::Format::Flexible->parse_datetime( $date );
 
 A small list of supported formats:
 
@@ -458,6 +473,22 @@ A small list of supported formats:
 
 there are 2800+ variations that are detected correctly in the test file.
 
+=head1 NOTES
+
+The DateTime website http://datetime.perl.org/?Modules as of march 2008
+lists this module under 'Confusing' and recommends the use of
+F<DateTime::Format::Natural>.
+
+Unfortunately I do not agree.  F<DateTime::Format::Natural> currently fails
+more than 2800 of my parsing tests.  F<DateTime::Format::Flexible> supports
+different types of date/time strings than F<DateTime::Format::Natural>.
+I think there is utility in that can be found in both of them.
+
+The whole goal of F<DateTime::Format::Flexible> is to accept just about
+any crazy date/time string that a user might care to enter.
+F<DateTime::Format::Natural> seems to be a little stricter in what it can
+parse.
+
 =head1 BUGS
 
 You cannot use a 1 or 2 digit year as the first field:
@@ -468,6 +499,8 @@ You cannot use a 1 or 2 digit year as the first field:
 It would get confused with MM-DD-YY
 
 It also prefers the US format of MM-DD over the European DD-MM.
+
+It also does not support timezones in teh string.
 
 =head1 AUTHOR
 
@@ -487,7 +520,7 @@ LICENSE file included with this module.
 
 =head1 SEE ALSO
 
-perl(1). F<DateTime::Format::Builder>
+F<DateTime::Format::Builder>, F<DateTime::Format::Natural>
 
 =cut
 

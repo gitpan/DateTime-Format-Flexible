@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2858;
+use Test::More tests => 2865;
 
 use DateTime;
 my $base = 'DateTime::Format::Flexible';
@@ -13,7 +13,7 @@ use_ok( $base);
 sub test_parse_date
 {
     my ( $given , $wanted ) = @_;
-    my $dt = $base->build( $given );
+    my $dt = $base->parse_datetime( $given );
     is( $dt->datetime , $wanted , "$given => $wanted" );
     return $dt;
 }
@@ -370,5 +370,5 @@ sub test_times
 {
     my $dt = DateTime->new( year => 1969 );
     is( $base->_pick_year( 50 , $dt->clone ) , '1950' , '50 becomes 1950 in 1969' );
-    is( $base->_pick_year( 5 ,  $dt->clone ) , '1905' , '5 becomes 1950 in 1969' );
+    is( $base->_pick_year( 5 ,  $dt->clone ) , '1905' , '5 becomes 1905 in 1969' );
 }
