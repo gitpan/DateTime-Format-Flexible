@@ -1,8 +1,11 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.04 Fri Mar 14 21:00:00 2008
+    - fix broken 0.03 release
+    - split tests out for easier integration into other distributions
+
 0.03 Mon Mar 10 02:00:00 2008
    - add method "parse_datetime" as an alias for "build".  thanks Adriano Rodrigues Ferreira
-   - add support for timezones as defined in DateTime::TimeZone
 
 0.02 Tue Oct 02 01:50:00 2007
    - fixed pod formatting

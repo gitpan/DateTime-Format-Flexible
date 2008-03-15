@@ -8,7 +8,11 @@ lib/DateTime/Format/Flexible.pm
 t/001_load.t
 t/002_pod.t
 t/003_podcoverage.t
-t/parsing.t
 t/nanoseconds.t
+t/no_year.t
+t/parsing.t
+t/pick_year.t
+t/whitespace.t
+t/data/tests.txt
 example/parse_date.pl
 META.yml                                 Module meta-data (added by MakeMaker)

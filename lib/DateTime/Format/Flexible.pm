@@ -2,12 +2,11 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use base 'DateTime::Format::Builder';
 
 use Readonly;
-use DateTime::TimeZone;
 
 Readonly my $DELIM  => qr{(?:\\|\/|-|\.|\s)};
 Readonly my $HMSDELIM => qr{(?:\.|:)};
@@ -208,8 +207,6 @@ DateTime::Format::Builder->create_class( parsers => { build => $formats } );
 sub parse_datetime
 {
     my $self = shift;
-    my ( $date ) = @_;
-
     return $self->build( @_ );
 }
 
@@ -407,9 +404,10 @@ If you have ever had to use a program that made you type in the date a certain
 way and thought "Why can't the computer just figure out what date I wanted?",
 this module is for you.
 
-It attempts to take any string you give it and parse it into a DateTime object.
+F<DateTime::Format::Flexible> attempts to take any string you give it and parse
+it into a DateTime object.
 
-The test file tests 3100+ variations of date/time strings.  If you can think of
+The test file tests 2500+ variations of date/time strings.  If you can think of
 any that I do not cover, please let me know.
 
 =head1 USAGE
@@ -419,7 +417,7 @@ This module uses F<DateTime::Format::Builder> under the covers.
 =head2 build, parse_datetime
 
 build and parse_datetime do the same thing.  Give it a string and it
-tries to return a DateTime object.
+attempts to parse it and return a DateTime object.
 
 If it can't it will throw an exception.
 
@@ -471,7 +469,8 @@ A small list of supported formats:
 
 =back
 
-there are 2800+ variations that are detected correctly in the test file.
+there are 2500+ variations that are detected correctly in the test files
+(see t/data/tests.txt for most of them).
 
 =head1 NOTES
 
@@ -480,7 +479,7 @@ lists this module under 'Confusing' and recommends the use of
 F<DateTime::Format::Natural>.
 
 Unfortunately I do not agree.  F<DateTime::Format::Natural> currently fails
-more than 2800 of my parsing tests.  F<DateTime::Format::Flexible> supports
+more than 2000 of my parsing tests.  F<DateTime::Format::Flexible> supports
 different types of date/time strings than F<DateTime::Format::Natural>.
 I think there is utility in that can be found in both of them.
 
@@ -500,7 +499,7 @@ It would get confused with MM-DD-YY
 
 It also prefers the US format of MM-DD over the European DD-MM.
 
-It also does not support timezones in teh string.
+It also does not support timezones.
 
 =head1 AUTHOR
 
