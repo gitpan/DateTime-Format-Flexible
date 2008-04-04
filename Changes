@@ -1,5 +1,8 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.05 Fri Apr 4 14:00:00 2008
+    - fix some test helper libraries not being included.  thanks GOOZBACH (http://rt.cpan.org/Public/Bug/Display.html?id=34683)
+
 0.04 Fri Mar 14 21:00:00 2008
     - fix broken 0.03 release
     - split tests out for easier integration into other distributions

@@ -12,7 +12,9 @@ t/nanoseconds.t
 t/no_year.t
 t/parsing.t
 t/pick_year.t
+t/time.t
 t/whitespace.t
 t/data/tests.txt
+t/lib/helper.pm
 example/parse_date.pl
 META.yml                                 Module meta-data (added by MakeMaker)
