@@ -1,5 +1,8 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.06 Mon Apr 20 15:06:00 2009
+    - Fix parsing bug with dd-(oct|nov|dec)-yyyy (thanks Phil Brass)
+
 0.05 Fri Apr 4 14:00:00 2008
     - fix some test helper libraries not being included.  thanks GOOZBACH (http://rt.cpan.org/Public/Bug/Display.html?id=34683)
 

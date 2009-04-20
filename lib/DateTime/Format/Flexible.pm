@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use base 'DateTime::Format::Builder';
 
@@ -111,14 +111,14 @@ my $formats =
  ########################################################
  ##### Alpha months
  # _fix_alpha changes month name to "XXM"
- # 18-XXM, XX1-18,08-XXM-99, XXM-08-1999, 1999-XX1-08
+ # 18-XXM, XX1-18, 08-XXM-99, XXM-08-1999, 1999-XX1-08, 1999-XX10-08
 
  # DD-mon, D-mon, D-mon-YY, DD-mon-YY, D-mon-YYYY, DD-mon-YYYY, D-mon-Y, DD-mon-Y
  { length => [5..7],   params => $DM,       regex  => qr{\A${DDXXMM}\z},                     extra => { year => DateTime->now->year } },
  { length => [9..15],  params => $DMHM,     regex  => qr{\A${DDXXMM}\s${HM}\z},              extra => { year => DateTime->now->year } },
  { length => [9..18],  params => $DMHMS,    regex  => qr{\A${DDXXMM}\s${HMS}\z},             extra => { year => DateTime->now->year } },
  { length => [11..21], params => $DMHMSAP,  regex  => qr{\A${DDXXMM}\s${HMS}\s?$AMPM\z},     postprocess => \&_fix_ampm , extra => { year => DateTime->now->year } },
- { length => [7..11],  params => $DMY,      regex  => qr{\A${DDXXMMYYYY}\z},                 postprocess => \&_fix_year },
+ { length => [7..12],  params => $DMY,      regex  => qr{\A${DDXXMMYYYY}\z},                 postprocess => \&_fix_year },
  { length => [12..18], params => $DMYHM,    regex  => qr{\A${DDXXMMYYYY}\s${HM}\z},          postprocess => \&_fix_year },
  { length => [12..21], params => $DMYHMS,   regex  => qr{\A${DDXXMMYYYY}\s${HMS}\z},         postprocess => \&_fix_year },
  { length => [14..24], params => $DMYHMSAP, regex  => qr{\A${DDXXMMYYYY}\s${HMS}\s?$AMPM\z}, postprocess => [ \&_fix_year , \&_fix_ampm ] },
@@ -497,9 +497,9 @@ You cannot use a 1 or 2 digit year as the first field:
 
 It would get confused with MM-DD-YY
 
-It also prefers the US format of MM-DD over the European DD-MM.
+Prefers the US format of MM-DD over the European DD-MM.
 
-It also does not support timezones.
+Does not support timezones.
 
 =head1 AUTHOR
 
@@ -522,4 +522,3 @@ LICENSE file included with this module.
 F<DateTime::Format::Builder>, F<DateTime::Format::Natural>
 
 =cut
-

@@ -11,9 +11,9 @@ my $base = 'DateTime::Format::Flexible';
 
 sub run_tests
 {
-    foreach my $line ( @_ )
+    foreach ( @_ )
     {
-        $line =~ s{\n\z}{}mx;
+        my ( $line ) = $_ =~ m{([^\n]+)};
         next if $line =~ m{\A\#}mx;
         next if $line =~ m{\A\z}mx;
         my ( $given , $wanted ) = split m{\s+=>\s+}mx , $line;

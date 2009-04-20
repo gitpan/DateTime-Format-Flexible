@@ -8,6 +8,7 @@ lib/DateTime/Format/Flexible.pm
 t/001_load.t
 t/002_pod.t
 t/003_podcoverage.t
+t/alpha_month.t
 t/nanoseconds.t
 t/no_year.t
 t/parsing.t
