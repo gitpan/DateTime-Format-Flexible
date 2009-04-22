@@ -16,17 +16,21 @@ sub run_tests
         my ( $line ) = $_ =~ m{([^\n]+)};
         next if $line =~ m{\A\#}mx;
         next if $line =~ m{\A\z}mx;
-        my ( $given , $wanted ) = split m{\s+=>\s+}mx , $line;
+        my ( $given , $wanted , $tz ) = split m{\s+=>\s+}mx , $line;
 
-        compare( $given , $wanted );
+        compare( $given , $wanted , $tz );
     }
 }
 
 sub compare
 {
-    my ( $given , $wanted ) = @_;
+    my ( $given , $wanted , $tz ) = @_;
     my $dt = $base->parse_datetime( $given );
     is( $dt->datetime , $wanted , "$given => $wanted" );
+    if ( $tz )
+    {
+        is( $dt->time_zone->name , $tz , "timezone => $tz" );
+    }
 }
 
 1;

@@ -1,5 +1,11 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.07 Tue Apr 2 03:00:00 2009
+    - add ability to strip strings from the date string
+    - can now parse timezones
+    - rudimentary support for european dates (dd-mm-yyyy)
+    - can now parse epoch times
+
 0.06 Mon Apr 20 15:06:00 2009
     - Fix parsing bug with dd-(oct|nov|dec)-yyyy (thanks Phil Brass)
 

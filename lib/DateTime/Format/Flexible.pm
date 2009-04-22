@@ -2,11 +2,12 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use base 'DateTime::Format::Builder';
 
 use Readonly;
+use Carp 'croak';
 
 Readonly my $DELIM  => qr{(?:\\|\/|-|\.|\s)};
 Readonly my $HMSDELIM => qr{(?:\.|:)};
@@ -15,6 +16,7 @@ Readonly my $MON => qr{(\d\d?)};
 Readonly my $DAY => qr{(\d\d?)};
 Readonly my $HM => qr{(\d\d?)$HMSDELIM(\d\d?)};
 Readonly my $HMS => qr{(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)};
+Readonly my $HMSNS => qr{(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d+)};
 Readonly my $AMPM => qr{(a\.?m|p\.?m)\.?}i;
 
 Readonly my $MMDDYYYY => qr{(\d{1,2})$DELIM(\d{1,2})$DELIM(\d{1,4})};
@@ -31,6 +33,7 @@ Readonly my $DMHMS => [ qw( day month hour minute second ) ];
 Readonly my $DMHMSAP => [ qw( day month hour minute second ampm ) ];
 Readonly my $DMYHM => [ qw( day month year hour minute ) ];
 Readonly my $DMYHMS => [ qw( day month year hour minute second ) ];
+Readonly my $DMYHMSNS => [ qw( day month year hour minute second nanosecond ) ];
 Readonly my $DMYHMSAP => [ qw( day month year hour minute second ampm ) ];
 
 Readonly my $MD => [ qw( month day ) ];
@@ -43,6 +46,7 @@ Readonly my $MYHMSAP => [ qw( month year hour minute second ampm ) ];
 Readonly my $MDYHMS => [ qw( month day year hour minute second ) ];
 Readonly my $MDYHMAP => [ qw( month day year hour minute ampm ) ];
 Readonly my $MDYHMSAP => [ qw( month day year hour minute second ampm ) ];
+Readonly my $MDHMSY => [ qw( month day hour minute second year ) ];
 
 Readonly my $YM => [ qw( year month ) ];
 Readonly my $YMD => [ qw( year month day ) ];
@@ -53,8 +57,10 @@ Readonly my $YMHMS => [ qw( year month hour minute second ) ];
 Readonly my $YMDHMS => [ qw( year month day hour minute second ) ];
 Readonly my $YMHMSAP => [ qw( year month hour minute second ampm ) ];
 Readonly my $YMDHMSAP => [ qw( year month day hour minute second ampm ) ];
+Readonly my $YMDHMSNS => [ qw( year month day hour minute second nanosecond ) ];
 
 use DateTime;
+use DateTime::TimeZone;
 use DateTime::Format::Builder;
 
 my $formats =
@@ -62,6 +68,9 @@ my $formats =
  [ preprocess => \&_fix_alpha ] ,
 
  { length => [18..22] , params => $YMDHMSAP , regex => qr{\A(\d{4})$DELIM(\d{2})$DELIM(\d{2})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm } ,
+
+ # 2011-06-16-17.43.30.000000
+ { length => [26] , params => $YMDHMSNS , regex => qr{\A(\d{4})$DELIM(\d{2})$DELIM(\d{2})${DELIM}$HMSNS\z} } ,
 
  ########################################################
  ##### Month/Day/Year
@@ -121,6 +130,7 @@ my $formats =
  { length => [7..12],  params => $DMY,      regex  => qr{\A${DDXXMMYYYY}\z},                 postprocess => \&_fix_year },
  { length => [12..18], params => $DMYHM,    regex  => qr{\A${DDXXMMYYYY}\s${HM}\z},          postprocess => \&_fix_year },
  { length => [12..21], params => $DMYHMS,   regex  => qr{\A${DDXXMMYYYY}\s${HMS}\z},         postprocess => \&_fix_year },
+ { length => [16..25], params => $DMYHMSNS, regex  => qr{\A${DDXXMMYYYY}\s${HMSNS}\z},       postprocess => \&_fix_year },
  { length => [14..24], params => $DMYHMSAP, regex  => qr{\A${DDXXMMYYYY}\s${HMS}\s?$AMPM\z}, postprocess => [ \&_fix_year , \&_fix_ampm ] },
 
  # mon-D , mon-DD,  mon-YYYY, mon-D-Y, mon-DD-Y, mon-D-YY, mon-DD-YY
@@ -154,6 +164,9 @@ my $formats =
  { length => [8..13],  params => $DMY,      regex => qr{\A(\d{1,2})\sXX(\d{1,2}),?\s(\d{1,4})\z} },
  { length => [13..21], params => $DMYHMS,   regex => qr{\A(\d{1,2})\sXX(\d{1,2}),?\s(\d{1,4})\s$HMS\z} },
  { length => [16..27], params => $DMYHMSAP, regex => qr{\A(\d{1,2})\sXX(\d{1,2}),?\s(\d{1,4})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
+
+ # Dec 03 20:53:10 2009
+ { length => [16..21], params => $MDHMSY , regex => qr{\AXX(\d{1,2})\s(\d{1,2})\s$HMS\s(\d{4})\z} } ,
 
  ########################################################
  ##### Bare Numbers
@@ -199,7 +212,25 @@ my $formats =
  { length => [12..21], params => [ qw( year doy hour minute second ampm ) ] , regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\s?$AMPM\z} , postprocess => [ \&_fix_year , \&_fix_day_of_year , \&_fix_ampm ]} ,
 
  # nanoseconds. no length here, we do not know how many digits they will use for nanoseconds
- {  params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)${HMS}${HMSDELIM}(\d+)\z} } ,
+ { params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)${HMS}${HMSDELIM}(\d+)\z} } ,
+
+ # epochtime
+ {
+   params => [] , # we specifically set the params below
+   regex => qr{\A\d+\.?\d+?\z} , postprocess => sub {
+       my %args = @_;
+       my $dt =  DateTime->from_epoch( epoch => $args{input} );
+       $args{parsed}{year} = $dt->year;
+       $args{parsed}{month} = $dt->month;
+       $args{parsed}{day} = $dt->day;
+       $args{parsed}{hour} = $dt->hour;
+       $args{parsed}{minute} = $dt->minute;
+       $args{parsed}{second} = $dt->second;
+       $args{parsed}{nanosecond} = $dt->nanosecond;
+       return 1;
+   }
+} ,
+
 ];
 
 DateTime::Format::Builder->create_class( parsers => { build => $formats } );
@@ -229,6 +260,8 @@ sub _fix_alpha
 {
     my %args = @_;
     my ($date, $p) = @args{qw( input parsed )};
+    my %extra_args = @{$args{args}} if exists $args{args};
+
     my %months =
     (
      'Jan(?:uary)?'        => 1,
@@ -260,6 +293,55 @@ sub _fix_alpha
      midnight => '00:00:00' ,
     );
 
+    if ( exists $extra_args{strip} )
+    {
+        my @strips = ref( $extra_args{strip} ) eq 'ARRAY' ? @{$extra_args{strip}} : ($extra_args{strip});
+        foreach my $strip ( @strips )
+        {
+            if ( ref( $strip ) eq 'Regexp' )
+            {
+                $date =~ s{$strip}{}mx;
+            }
+            else
+            {
+                croak( "parameter strip requires a regular expression" );
+            }
+        }
+    }
+
+    $date = _clean_whitespace( $date );
+
+    # remove any trailing 'Z' => UTC
+    if ( $date =~ m{Z\z}mx )
+    {
+        $date =~ s{Z\z}{}mx;
+        $p->{time_zone} = 'UTC';
+    }
+
+    # set any trailing string timezones
+    if ( my ( $tz ) = $date =~ m{\s+(\D+\d?\D+?)\z} )
+    {
+        my $orig_tz = $tz;
+        if ( exists $extra_args{tz_map}->{$tz} )
+        {
+            $tz = $extra_args{tz_map}->{$tz};
+        }
+        if ( DateTime::TimeZone->is_valid_name( $tz ) )
+        {
+            $date =~ s{\Q$orig_tz\E}{};
+            $p->{time_zone} = $tz;
+        }
+    }
+
+    # set any trailing offset timezones
+    if ( my ( $tz ) = $date =~ m{(?:\s+)?(\+[\d]+)\z}mx )
+    {
+        $date =~ s{\Q$tz\E}{};
+        # some timezones are 2 digit hours, add the minutes part
+        $tz .= '00' if ( length( $tz ) == 3 );
+        $p->{time_zone} = $tz;
+    }
+
     # remove ' of' as in '16th of November 2003'
     if ( $date =~ m{\sof\s}mx )
     {
@@ -285,10 +367,7 @@ sub _fix_alpha
         }
     }
 
-    $date =~ s{\A\s+}{}mx;    # trim front
-    $date =~ s{\s+\z}{}mx;    # trim back
-
-    $date =~ s{\s+}{ }gmx;    # remove extra spaces from the middle
+    $date = _clean_whitespace( $date );
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
     $date =~ s{\A$DELIM+}{}mx;      # remove any leading delimeters
@@ -305,6 +384,15 @@ sub _fix_alpha
         }
     }
 
+    # try and detect DD-MM-YYYY
+    if ( $extra_args{european} )
+    {
+        if ( my ( $m , $d , $y ) = $date =~ m{\A$MMDDYYYY}mx )
+        {
+            $date =~ s{\A$MMDDYYYY}{$2-$1-$3}mx;
+        }
+    }
+
     # remove number extensions
     my $day_match = qr{(\d{1,2})(?:st|nd|rd|th)} ;
     if( $date =~ m{$day_match}mxi )
@@ -315,11 +403,21 @@ sub _fix_alpha
     return $date;
 }
 
+sub _clean_whitespace
+{
+    my ( $string ) = @_;
+    $string =~ s{\A\s+}{}mx;    # trim front
+    $string =~ s{\s+\z}{}mx;    # trim back
+
+    $string =~ s{\s+}{ }gmx;    # remove extra whitespace from the middle
+    return $string;
+}
+
 sub _fix_ampm
 {
     my %args = @_;
 
-    next if not defined $args{parsed}{ampm};
+    return if not defined $args{parsed}{ampm};
 
     my $ampm = $args{parsed}{ampm};
     delete $args{parsed}{ampm};
@@ -425,6 +523,55 @@ If it can't it will throw an exception.
 
  my $dt = DateTime::Format::Flexible->parse_datetime( $date );
 
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+     $date,
+     strip    => [qr{\.\z}],
+     tz_map   => {EDT => 'America/New_York'},
+     european => 1
+ );
+
+=over 4
+
+=item * C<strip>
+
+Remove a substring from the string you are trying to parse.
+You can pass multiple regexes in an arrayref.
+
+example:
+
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+     '2011-04-26 00:00:00 (registry time)' ,
+     strip => [qr{\(registry time\)\z}] ,
+ );
+ # $dt is now 2011-04-26T00:00:00
+
+This is helpful if you have a load of dates you want to normalize and you know
+of some weird formatting beforehand.
+
+-item * C<tz_map>
+
+map a given timezone to another recognized timezone
+Values are given as a hashref.
+
+example:
+
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+     '25-Jun-2009 EDT' ,
+     tz_map => {EDT => 'America/New_York'}
+ );
+ # $dt is now 2009-06-25T00:00:00 with a timezone of America/New_York
+
+This is helpful if you have a load of dates that have timezones that are not
+recognized by F<DateTime::Timezone>.
+
+=item * C<european>
+
+If european is set to a true value, an attempt will be made to parse as a
+DD-MM-YYYY date instead of the default MM-DD-YYYY.  There is a chance
+that this will not do the right thing due to ambiguity.
+
+=head2 Example formats
+
 A small list of supported formats:
 
 =over 4
@@ -469,8 +616,8 @@ A small list of supported formats:
 
 =back
 
-there are 2500+ variations that are detected correctly in the test files
-(see t/data/tests.txt for most of them).
+there are 9000+ variations that are detected correctly in the test files
+(see t/data/* for most of them).
 
 =head1 NOTES
 
@@ -497,10 +644,6 @@ You cannot use a 1 or 2 digit year as the first field:
 
 It would get confused with MM-DD-YY
 
-Prefers the US format of MM-DD over the European DD-MM.
-
-Does not support timezones.
-
 =head1 AUTHOR
 
     Tom Heady
@@ -519,6 +662,6 @@ LICENSE file included with this module.
 
 =head1 SEE ALSO
 
-F<DateTime::Format::Builder>, F<DateTime::Format::Natural>
+F<DateTime::Format::Builder>, F<DateTime::Timezone>, F<DateTime::Format::Natural>
 
 =cut

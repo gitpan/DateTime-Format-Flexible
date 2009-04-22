@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More 'no_plan'; #tests => 3;
+use Test::More tests => 3;
 
 use t::lib::helper;
 
