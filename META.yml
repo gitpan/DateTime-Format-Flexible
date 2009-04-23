@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                DateTime-Format-Flexible
-version:             0.07
+version:             0.08
 abstract:            DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.
 license:             perl
 author:              

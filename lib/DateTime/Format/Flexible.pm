@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use base 'DateTime::Format::Builder';
 
@@ -548,7 +548,7 @@ example:
 This is helpful if you have a load of dates you want to normalize and you know
 of some weird formatting beforehand.
 
--item * C<tz_map>
+=item * C<tz_map>
 
 map a given timezone to another recognized timezone
 Values are given as a hashref.
@@ -569,6 +569,15 @@ recognized by F<DateTime::Timezone>.
 If european is set to a true value, an attempt will be made to parse as a
 DD-MM-YYYY date instead of the default MM-DD-YYYY.  There is a chance
 that this will not do the right thing due to ambiguity.
+
+example:
+
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+     '16/06/2010' , european => 1 ,
+ );
+ # $dt is now 2010-06-16T00:00:00
+
+=back
 
 =head2 Example formats
 
