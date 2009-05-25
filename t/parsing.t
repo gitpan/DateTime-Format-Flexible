@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8078;
+use Test::More tests => 8079;
 use File::Spec::Functions 'catfile';
 
 use t::lib::helper;

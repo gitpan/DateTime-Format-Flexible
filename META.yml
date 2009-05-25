@@ -1,18 +1,24 @@
 --- #YAML:1.0
-name:                DateTime-Format-Flexible
-version:             0.08
-abstract:            DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.
-license:             perl
-author:              
+name:               DateTime-Format-Flexible
+version:            0.09
+abstract:           DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.
+author:
     - Tom Heady (cpan@punch.net)
-generated_by:        ExtUtils::MakeMaker version 6.42
-distribution_type:   module
-requires:     
-    DateTime:                      0
-    DateTime::Format::Builder:     0.74
-    DateTime::TimeZone:            0
-    Readonly:                      0.06
-    Test::Simple:                  0.44
+license:            perl
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+requires:
+    DateTime:             0
+    DateTime::Format::Builder:  0.74
+    DateTime::TimeZone:   0
+    Readonly:             0.06
+    Test::Simple:         0.44
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.48
 meta-spec:
-    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
-    version: 1.3
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

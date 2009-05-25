@@ -1,5 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.09 Sun May 24 22:00:00 2009
+   - add a real copyright for Debian packaging
+   - fix parsing a bare 4 digit year. (thanks Dominic Rose, rt #46278)
+
 0.08 Wed Apr 22 14:00:00 2009
     - fix some pod errors, give an example for european hinting
 

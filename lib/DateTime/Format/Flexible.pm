@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use base 'DateTime::Format::Builder';
 
@@ -48,6 +48,7 @@ Readonly my $MDYHMAP => [ qw( month day year hour minute ampm ) ];
 Readonly my $MDYHMSAP => [ qw( month day year hour minute second ampm ) ];
 Readonly my $MDHMSY => [ qw( month day hour minute second year ) ];
 
+Readonly my $Y => [ qw( year ) ];
 Readonly my $YM => [ qw( year month ) ];
 Readonly my $YMD => [ qw( year month day ) ];
 Readonly my $YMDH => [ qw( year month day hour ) ];
@@ -179,6 +180,7 @@ my $formats =
  { length => 11,       params => $YMDH,     regex => qr{\A(\d{4})(\d{2})(\d{2})T(\d{2})\z} },
  { length => 8,        params => $YMD,      regex => qr{\A(\d{4})(\d{2})(\d{2})\z} } ,
  { length => 6,        params => $YM,       regex => qr{\A(\d{4})(\d{2})\z} },
+ { length => 4,        params => $Y,        regex => qr{\A(\d{4})\z} },
 
  ########################################################
  ##### bare times
@@ -661,7 +663,9 @@ It would get confused with MM-DD-YY
     cpan@punch.net
     http://www.punch.net/
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT and LICENSE
+
+Copyright 2007-2009 Tom Heady
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
