@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use base 'DateTime::Format::Builder';
 
@@ -72,7 +72,7 @@ my $YMDHMSNSAP = [ qw( year month day hour minute second nanosecond ampm ) ];
 
 use DateTime;
 use DateTime::TimeZone;
-use DateTime::Format::Builder '0.74';
+use DateTime::Format::Builder 0.74;
 
 my $base_dt = DateTime->now;
 sub base

@@ -1,6 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
-0.11
+0.12 The Feb 25 2010
+   - fix DateTime::Format::Builder import
+
+0.11 Wed Feb 24 2010
    - remove Readonly dependency
    - support some postgresql datetimes: epoch, infinity, -infinity, allballs
      - see http://www.postgresql.org/docs/8.4/interactive/datatype-datetime.html section 8.5.1.4
