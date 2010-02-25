@@ -14,8 +14,9 @@ sub run_tests
     foreach ( @_ )
     {
         my ( $line ) = $_ =~ m{([^\n]+)};
-        next if $line =~ m{\A\#}mx;
-        next if $line =~ m{\A\z}mx;
+        next if not $line;
+        next if $line =~ m{\A\#}mx; # skip comments
+        next if $line =~ m{\A\z}mx; # skip blank lines
         my ( $given , $wanted , $tz ) = split m{\s+=>\s+}mx , $line;
 
         compare( $given , $wanted , $tz );

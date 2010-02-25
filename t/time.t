@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 20;
 use DateTime;
 
 use t::lib::helper;
@@ -26,4 +26,9 @@ t::lib::helper::run_tests(
     "9:30 pm    => ${today}T21:30:00" ,
     "9.30 pm    => ${today}T21:30:00" ,
     "9.30 p.m.  => ${today}T21:30:00" ,
+    "5:30       => ${today}T05:30:00" ,
+    "5:30:02    => ${today}T05:30:02" ,
+    "3p         => ${today}T15:00:00" ,
+    "3:15p      => ${today}T15:15:00" ,
+    "15:15      => ${today}T15:15:00" ,
 );

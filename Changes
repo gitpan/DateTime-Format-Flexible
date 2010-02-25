@@ -1,5 +1,30 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.10
+   - support for single character am/pm strings '3p'
+   - support for days of the week (wednesday => the nearest future wednesday) (thanks Shawn Moore, rt #53188)
+     - note: this is quite limited, I need more test cases
+       - works: wednesday
+       - works: wed at 3p
+   - support for bare months (february)
+   - support for limited timezones that are not at the end of the string (thanks Dave Faraldo)
+     - 'Wed Nov 11 13:55:48 PST 2009' becomes
+       - 2009-11-11T13:55:48 America/Los_Angeles
+   - beginning multiple language support (contributions welcome)
+     - support english (en) and spanish (es)
+   - support dates like 'now, today, tomorrow'
+   - switch to strptime from regexes for some parsing for clarity
+   - now supports negative timezone offsets IF it is a 4 digit offset and there is a space before the offset
+     - works: 2007-05-06T04:44:44 -0800
+     - does not work: 2007-05-06T04:44:44-0800
+     - does not work: 2007-05-06T04:44:44-08
+     - does not work: 2007-05-06T04:44:44 -08
+   - now supports 2 digit years as the first number if the year is > 31
+     - works: 35-12-23 (2035-12-23T00:00:00)
+     - does not work: 11-12-13 (2013-11-12T00:00:00, or 2013-12-11T00:00:00 with european hinting)
+   - timezone parsing should now be more reliable
+   - you can now set a 'base' datetime object to help fill out partial datetimes
+
 0.09 Sun May 24 22:00:00 2009
    - add a real copyright for Debian packaging
    - fix parsing a bare 4 digit year. (thanks Dominic Rose, rt #46278)

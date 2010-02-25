@@ -1,8 +1,7 @@
 
 
 use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
+
 WriteMakefile(
     NAME         => 'DateTime::Format::Flexible',
     VERSION_FROM => 'lib/DateTime/Format/Flexible.pm',
@@ -15,5 +14,7 @@ WriteMakefile(
         'DateTime::Format::Builder' => 0.74, # length parameter can now be an arrayref
         'DateTime'                  => 0,
         'DateTime::TimeZone'        => 0,
+        'Module::Pluggable'         => 0,
+        'List::MoreUtils'           => 0,
     },
 );

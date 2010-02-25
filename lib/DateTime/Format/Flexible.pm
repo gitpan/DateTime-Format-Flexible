@@ -2,10 +2,11 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use base 'DateTime::Format::Builder';
 
+use DateTime::Format::Flexible::lang;
 use Readonly;
 use Carp 'croak';
 
@@ -14,18 +15,24 @@ Readonly my $HMSDELIM => qr{(?:\.|:)};
 Readonly my $YEAR => qr{(\d{1,4})};
 Readonly my $MON => qr{(\d\d?)};
 Readonly my $DAY => qr{(\d\d?)};
+Readonly my $HOUR => qr{(\d\d?)};
 Readonly my $HM => qr{(\d\d?)$HMSDELIM(\d\d?)};
 Readonly my $HMS => qr{(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)};
-Readonly my $HMSNS => qr{(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d+)};
-Readonly my $AMPM => qr{(a\.?m|p\.?m)\.?}i;
+Readonly my $HMSNS => qr{T?(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d+)T?};
+Readonly my $AMPM => qr{(a\.?m?|p\.?m?)\.?}i;
 
 Readonly my $MMDDYYYY => qr{(\d{1,2})$DELIM(\d{1,2})$DELIM(\d{1,4})};
 Readonly my $YYYYMMDD => qr{(\d{4})$DELIM(\d{1,2})$DELIM(\d{1,2})};
 Readonly my $MMDD => qr{(\d{1,2})$DELIM(\d{1,2})};
-Readonly my $DDXXMM => qr{(\d{1,2})${DELIM}XX(\d{1,2})};
-Readonly my $DDXXMMYYYY => qr{(\d{1,2})${DELIM}XX(\d{1,2})$DELIM(\d{1,4})};
+Readonly my $XMMXDD => qr{X(\d{1,2})X$DELIM(\d{1,2})};
+Readonly my $DDXMMX => qr{(\d{1,2})${DELIM}X(\d{1,2})X};
+Readonly my $DDXMMXYYYY => qr{(\d{1,2})${DELIM}X(\d{1,2})X$DELIM(\d{1,4})};
 Readonly my $MMYYYY => qr{(\d{1,2})$DELIM(\d{4})};
+Readonly my $XMMXYYYY => qr{X(\d{1,2})X${DELIM}(\d{4})};
+Readonly my $XMMXDDYYYY => qr{X(\d{1,2})X${DELIM}(\d{1,2})$DELIM(\d{1,4})};
 
+Readonly my $HMMDY => [ qw( hour minute month day year ) ];
+Readonly my $HMAPMMDD => [ qw( hour minute ampm month day ) ];
 Readonly my $DM => [ qw( day month ) ];
 Readonly my $DMY => [ qw( day month year ) ];
 Readonly my $DMHM => [ qw( day month hour minute ) ];
@@ -36,6 +43,7 @@ Readonly my $DMYHMS => [ qw( day month year hour minute second ) ];
 Readonly my $DMYHMSNS => [ qw( day month year hour minute second nanosecond ) ];
 Readonly my $DMYHMSAP => [ qw( day month year hour minute second ampm ) ];
 
+Readonly my $M => [ qw( month ) ];
 Readonly my $MD => [ qw( month day ) ];
 Readonly my $MY => [ qw( month year ) ];
 Readonly my $MDY => [ qw( month day year ) ];
@@ -55,14 +63,25 @@ Readonly my $YMDH => [ qw( year month day hour ) ];
 Readonly my $YHMS => [ qw( year hour minute second ) ];
 Readonly my $YMDHM => [ qw( year month day hour minute ) ];
 Readonly my $YMHMS => [ qw( year month hour minute second ) ];
+Readonly my $YMDHAP => [ qw( year month day hour ampm ) ];
 Readonly my $YMDHMS => [ qw( year month day hour minute second ) ];
+Readonly my $YMDHMAP => [ qw( year month day hour minute ampm ) ];
 Readonly my $YMHMSAP => [ qw( year month hour minute second ampm ) ];
 Readonly my $YMDHMSAP => [ qw( year month day hour minute second ampm ) ];
 Readonly my $YMDHMSNS => [ qw( year month day hour minute second nanosecond ) ];
+Readonly my $YMDHMSNSAP => [ qw( year month day hour minute second nanosecond ampm ) ];
 
 use DateTime;
 use DateTime::TimeZone;
 use DateTime::Format::Builder;
+
+my $base_dt = DateTime->now;
+sub base
+{
+    my ( $self , $dt ) = @_;
+    $base_dt = $dt if ( $dt );
+    return $base_dt;
+}
 
 my $formats =
 [
@@ -79,6 +98,7 @@ my $formats =
  # M/D/YYYY, M/DD/YYYY, MM/D/YYYY, MM/DD/YYYY
 
  { length => [5..10],  params => $MDY,      regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\z},               postprocess => \&_fix_year },
+# { length => [14],     params => $MDYHMS,   regex => qr{\A${MON}${DAY}${YEAR}\s$HMS\z},                         postprocess => \&_fix_year },
  { length => [11..19], params => $MDYHMS,   regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HMS\z},         postprocess => \&_fix_year },
  { length => [11..20], params => $MDYHMAP,  regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HM\s?$AMPM\z},  postprocess => [ \&_fix_ampm , \&_fix_year ] } ,
  { length => [14..22], params => $MDYHMSAP, regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HMS\s?$AMPM\z}, postprocess => [ \&_fix_ampm , \&_fix_year ] } ,
@@ -90,28 +110,71 @@ my $formats =
  # YYYY/M/D, YYYY/M/DD, YYYY/MM/D, YYYY/MM/DD
  # YYYY/MM/DD HH:MM:SS
  # YYYY-MM HH:MM:SS
- { length => [6,7],     params => $YM,
-   regex => qr{\A(\d{4})$DELIM$MON\z} },
- { length => [12..16],     params => $YMHMS,
-   regex => qr{\A(\d{4})$DELIM$MON\s$HMS\z} },
- { length => [14..19],     params => $YMHMSAP,
-   regex => qr{\A(\d{4})$DELIM$MON\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
+ { length => [6,7],    params => $YM,       regex => qr{\A(\d{4})$DELIM$MON\z} },
+ { length => [12..16], params => $YMHMS,    regex => qr{\A(\d{4})$DELIM$MON\s$HMS\z} },
+ { length => [14..19], params => $YMHMSAP,  regex => qr{\A(\d{4})$DELIM$MON\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
  { length => [8..10],  params => $YMD,      regex => qr{\A$YYYYMMDD\z} },
+ { length => [10..12], params => $YMDH,     regex => qr{\A${YYYYMMDD}\s${HOUR}z} },
+ { length => [13..15], params => $YMDHAP,   regex => qr{\A${YYYYMMDD}\s${HOUR}\s?${AMPM}\z} , postprocess => \&_fix_ampm },
  { length => [11..16], params => $YMDHM,    regex => qr{\A$YYYYMMDD\s$HM\z} },
+ { length => [14..19], params => $YMDHMAP,  regex => qr{\A$YYYYMMDD\s$HM\s?$AMPM\z}, postprocess => \&_fix_ampm },
  { length => [14..19], params => $YMDHMS,   regex => qr{\A$YYYYMMDD\s$HMS\z} },
  { length => [17..21], params => $YMDHMSAP, regex => qr{\A$YYYYMMDD\s$HMS\s?$AMPM\z}, postprocess => \&_fix_ampm },
 
  ########################################################
  ##### YYYY-MM-DDTHH:MM:SS
  # this is what comes out of the database
- { length => 19, params => $YMDHMS, regex  => qr{\A(\d{4})$DELIM(\d{2})$DELIM(\d{2})T(\d{2}):(\d{2}):(\d{2})\z} },
+ { length => 19, params => $YMDHMS, regex => qr{\A(\d{4})$DELIM(\d{2})$DELIM(\d{2})T(\d{2}):(\d{2}):(\d{2})\z} },
+
+ { length => 16, params => $YMDHMS, regex => qr{\A(\d{4})(\d{2})(\d{2})(\d{2}):(\d{2}):(\d{2})\z} },
+ { length => 13, params => $YMDHM , regex => qr{\A(\d{4})(\d{2})(\d{2})(\d{2}):(\d{2})\z} },
+
+ { length => 10 , params => $YMD   , regex => qr{\AY(\d{2})Y$DELIM(\d{2})$DELIM(\d{2})\z} , postprocess => \&_fix_year } ,
+ # 96-06-1800:00:00
+ { length => 18 , params => $YMDHMS , regex => qr{\AY(\d{2})Y$DELIM(\d{2})$DELIM(\d{2})$HMS\z} , postprocess => \&_fix_year } ,
+ # 96-06-1800:00
+ { length => 15 , params => $YMDHM , regex => qr{\AY(\d{2})Y$DELIM(\d{2})$DELIM(\d{2})$HM\z} , postprocess => \&_fix_year } ,
+ # 9931201 at 05:30:25 pM GMT
+
+ # 1993120105:30:25.05 am
+ { length => 22 , params => $YMDHMSNSAP ,
+   regex => qr{\A(\d{4})(\d{2})(\d{2})${HMSNS}\s${AMPM}\z} ,
+   postprocess => \&_fix_ampm },
+
+ # 1993120105:30:25 am
+ { length => 19 , params => $YMDHMSAP ,
+   regex => qr{\A(\d{4})(\d{2})(\d{2})${HMS}\s${AMPM}\z} ,
+   postprocess => \&_fix_ampm },
 
  ########################################################
  ##### Month/Day
  # M/D, M/DD, MM/D, MM/DD
- { length => [3..5],   params => $MD,      regex  => qr{\A$MMDD\z},               extra  => { year => DateTime->now->year } },
- { length => [9..14],  params => $MDHMS,   regex  => qr{\A$MMDD\s$HMS\z},         extra  => { year => DateTime->now->year } },
- { length => [12..17], params => $MDHMSAP, regex  => qr{\A$MMDD\s$HMS\s?$AMPM\z}, extra  => { year => DateTime->now->year } , postprocess => \&_fix_ampm },
+ { length => [3..5], params => $MD, regex  => qr{\A$MMDD\z}, postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+
+ { length => [9..14], params => $MDHMS, regex => qr{\A$MMDD\s$HMS\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [12..17], params => $MDHMSAP, regex => qr{\A$MMDD\s$HMS\s?$AMPM\z},
+   postprocess => [sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year },\&_fix_ampm] },
+
+
+ ########################################################
+ ##### Dates with at in their name: 12-10-65 at 5:30:25
+ # the language plugins should wrap the time like this: T5:30:25T
+ # 2005-06-12 T3Tp (15)
+ { length => [16],     params => $MDYHMS,   regex => qr{\A${MON}${DAY}${YEAR}T${HMS}T\z},                               postprocess => \&_fix_year } ,
+ { length => [17,18],  params => $MDYHMS,   regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s?T${HMS}T\z},            postprocess => \&_fix_year } ,
+ { length => [20],     params => $MDYHMS,   regex => qr{\AX${MON}X${DELIM}${DAY}${DELIM}${YEAR}\s?T${HMS}T\z},          postprocess => \&_fix_year } ,
+ { length => [20,21],  params => $YMDHMAP,  regex => qr{\A${YYYYMMDD}\s?T${HM}T\s${AMPM}\z},                            postprocess => \&_fix_ampm } ,
+ { length => [21,22],  params => $YMDHMSAP, regex => qr{\A${YEAR}${MON}${DAY}\s?T${HMS}T\s${AMPM}\z},                   postprocess => \&_fix_ampm } ,
+ { length => [15],     params => $YMDHAP,   regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HOUR}T\s?${AMPM}\z}, postprocess => \&_fix_ampm } ,
+ { length => [16..18], params => $YMDHM,    regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HM}T\z},             postprocess => \&_fix_year } ,
+ { length => [21],     params => $YMDHMS,   regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HMS}T\z},            postprocess => \&_fix_year } ,
+ { length => [16],     params => $YMDHAP,   regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HOUR}T${AMPM}\z},    postprocess => \&_fix_ampm } ,
+
+ { length => [15,16],  params => $MDHMS,    regex => qr{\A${MON}${DELIM}${DAY}\s?T${HMS}T\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } } ,
+ { length => [17,18],  params => $MDHMS,    regex => qr{\AX${MON}X${DELIM}${DAY}\s?T${HMS}T\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } } ,
 
  ########################################################
  ##### Month/Day
@@ -120,54 +183,71 @@ my $formats =
 
  ########################################################
  ##### Alpha months
- # _fix_alpha changes month name to "XXM"
- # 18-XXM, XX1-18, 08-XXM-99, XXM-08-1999, 1999-XX1-08, 1999-XX10-08
+ # _fix_alpha changes month name to "XMX"
+ # 18-XMX, X1X-18, 08-XMX-99, XMY-08-1999, 1999-X1Y-08, 1999-X10X-08
 
  # DD-mon, D-mon, D-mon-YY, DD-mon-YY, D-mon-YYYY, DD-mon-YYYY, D-mon-Y, DD-mon-Y
- { length => [5..7],   params => $DM,       regex  => qr{\A${DDXXMM}\z},                     extra => { year => DateTime->now->year } },
- { length => [9..15],  params => $DMHM,     regex  => qr{\A${DDXXMM}\s${HM}\z},              extra => { year => DateTime->now->year } },
- { length => [9..18],  params => $DMHMS,    regex  => qr{\A${DDXXMM}\s${HMS}\z},             extra => { year => DateTime->now->year } },
- { length => [11..21], params => $DMHMSAP,  regex  => qr{\A${DDXXMM}\s${HMS}\s?$AMPM\z},     postprocess => \&_fix_ampm , extra => { year => DateTime->now->year } },
- { length => [7..12],  params => $DMY,      regex  => qr{\A${DDXXMMYYYY}\z},                 postprocess => \&_fix_year },
- { length => [12..18], params => $DMYHM,    regex  => qr{\A${DDXXMMYYYY}\s${HM}\z},          postprocess => \&_fix_year },
- { length => [12..21], params => $DMYHMS,   regex  => qr{\A${DDXXMMYYYY}\s${HMS}\z},         postprocess => \&_fix_year },
- { length => [16..25], params => $DMYHMSNS, regex  => qr{\A${DDXXMMYYYY}\s${HMSNS}\z},       postprocess => \&_fix_year },
- { length => [14..24], params => $DMYHMSAP, regex  => qr{\A${DDXXMMYYYY}\s${HMS}\s?$AMPM\z}, postprocess => [ \&_fix_year , \&_fix_ampm ] },
+ { length => [5..7], params => $DM, regex => qr{\A${DDXMMX}\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [9..15], params => $DMHM, regex => qr{\A${DDXMMX}\s${HM}\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [9..18], params => $DMHMS, regex => qr{\A${DDXMMX}\s${HMS}\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [11..21], params => $DMHMSAP, regex => qr{\A${DDXMMX}\s${HMS}\s?$AMPM\z},
+   postprocess => [sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year }, \&_fix_ampm] } ,
+
+ { length => [7..12],  params => $DMY,      regex => qr{\A${DDXMMXYYYY}\z},                 postprocess => \&_fix_year },
+ { length => [12..18], params => $DMYHM,    regex => qr{\A${DDXMMXYYYY}\s${HM}\z},          postprocess => \&_fix_year },
+ { length => [12..21], params => $DMYHMS,   regex => qr{\A${DDXMMXYYYY}\s${HMS}\z},         postprocess => \&_fix_year },
+ { length => [16..25], params => $DMYHMSNS, regex => qr{\A${DDXMMXYYYY}\s${HMSNS}\z},       postprocess => \&_fix_year },
+ { length => [14..24], params => $DMYHMSAP, regex => qr{\A${DDXMMXYYYY}\s${HMS}\s?$AMPM\z}, postprocess => [ \&_fix_year , \&_fix_ampm ] },
+
+ # mon
+ { length => [3,4], params => $M, regex => qr{\AX${MON}X\z},
+   postprocess => sub { my %args = @_;$args{parsed}{year} = __PACKAGE__->base->year;$args{parsed}{day} = 1; } },
 
  # mon-D , mon-DD,  mon-YYYY, mon-D-Y, mon-DD-Y, mon-D-YY, mon-DD-YY
  # mon-D-YYYY, mon-DD-YYYY
- { length => [8,9],    params => $MY,       regex => qr{\AXX$MMYYYY\z} },
- { length => [14..18], params => $MYHMS,    regex => qr{\AXX${MMYYYY}\s${HMS}\z} },
- { length => [16..21], params => $MYHMSAP,  regex => qr{\AXX${MMYYYY}\s${HMS}\s?$AMPM\z}, postprocess => \&_fix_ampm },
- { length => [5..7],   params => $MD,       regex => qr{\AXX$MMDD\z},                     extra => { year => DateTime->now->year } },
- { length => [10..18], params => $MDHMS,    regex => qr{\AXX$MMDD\s$HMS\z},               extra => { year => DateTime->now->year } },
- { length => [12..21], params => $MDHMSAP,  regex => qr{\AXX$MMDD\s$HMS\s?$AMPM\z} ,      postprocess => \&_fix_ampm , extra => { year => DateTime->now->year } },
- { length => [7..12],  params => $MDY,      regex => qr{\AXX$MMDDYYYY\z},                 postprocess => \&_fix_year },
- { length => [12..21], params => $MDYHMS,   regex => qr{\AXX$MMDDYYYY\s$HMS\z},           postprocess => \&_fix_year },
- { length => [14..24], params => $MDYHMSAP, regex => qr{\AXX$MMDDYYYY\s$HMS\s?$AMPM\z},   postprocess => [ \&_fix_year , \&_fix_ampm ] },
+ { length => [8,9],    params => $MY,       regex => qr{\A${XMMXYYYY}\z} },
+ { length => [14..18], params => $MYHMS,    regex => qr{\A${XMMXYYYY}\s${HMS}\z} },
+ { length => [16..21], params => $MYHMSAP,  regex => qr{\A${XMMXYYYY}\s${HMS}\s?$AMPM\z}, postprocess => \&_fix_ampm },
+
+ { length => [5..7], params => $MD, regex => qr{\A$XMMXDD\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [10..18], params => $MDHMS, regex => qr{\A$XMMXDD\s$HMS\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [12..21], params => $MDHMSAP, regex => qr{\A$XMMXDD\s$HMS\s?$AMPM\z} ,
+   postprocess => [sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year }, \&_fix_ampm] },
+
+ { length => [7..12],  params => $MDY,      regex => qr{\A$XMMXDDYYYY\z},                 postprocess => \&_fix_year },
+ { length => [12..21], params => $MDYHMS,   regex => qr{\A$XMMXDDYYYY\s$HMS\z},           postprocess => \&_fix_year },
+ { length => [14..24], params => $MDYHMSAP, regex => qr{\A$XMMXDDYYYY\s$HMS\s?$AMPM\z},   postprocess => [ \&_fix_year , \&_fix_ampm ] },
 
  # YYYY-mon-D, YYYY-mon-DD, YYYY-mon
- { length => [8,9],    params => $YM,       regex => qr{\A(\d{4})${DELIM}XX(\d{1,2})\z} },
- { length => [13..18], params => $YMHMS,    regex => qr{\A(\d{4})${DELIM}XX(\d{1,2})\s$HMS\z} },
- { length => [15..21], params => $YMHMSAP,  regex => qr{\A(\d{4})${DELIM}XX(\d{1,2})\s$HMS\s?$AMPM\z}                , postprocess => \&_fix_ampm },
- { length => [9..12],  params => $YMD,      regex => qr{\A(\d{4})${DELIM}XX(\d{1,2})$DELIM(\d{1,2})\z} },
- { length => [15..21], params => $YMDHMS,   regex => qr{\A(\d{4})${DELIM}XX(\d{1,2})$DELIM(\d{1,2})\s$HMS\z} },
- { length => [18..24], params => $YMDHMSAP, regex => qr{\A(\d{4})${DELIM}XX(\d{1,2})$DELIM(\d{1,2})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
-
+ { length => [8,9],    params => $YM,       regex => qr{\A(\d{4})${DELIM}X(\d{1,2})X\z} },
+ { length => [13..18], params => $YMHMS,    regex => qr{\A(\d{4})${DELIM}X(\d{1,2})X\s$HMS\z} },
+ { length => [15..21], params => $YMHMSAP,  regex => qr{\A(\d{4})${DELIM}X(\d{1,2})X\s$HMS\s?$AMPM\z}                , postprocess => \&_fix_ampm },
+ { length => [9..12],  params => $YMD,      regex => qr{\A(\d{4})${DELIM}X(\d{1,2})X$DELIM(\d{1,2})\z} },
+ { length => [15..21], params => $YMDHMS,   regex => qr{\A(\d{4})${DELIM}X(\d{1,2})X$DELIM(\d{1,2})\s$HMS\z} },
+ { length => [18..24], params => $YMDHMSAP, regex => qr{\A(\d{4})${DELIM}X(\d{1,2})X$DELIM(\d{1,2})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
  # month D, Y | month D, YY | month D, YYYY | month DD, Y | month DD, YY
  # month DD, YYYY
- { length => [9..13], params => $MDY,      regex => qr{\AXX(\d{1,2})\s(\d{1,2}),\s(\d{1,4})\z} },
- { length => [5..22], params => $MDYHMS,   regex => qr{\AXX(\d{1,2})\s(\d{1,2}),\s(\d{1,4})\s$HMS\z} },
- { length => [7..25], params => $MDYHMSAP, regex => qr{\AXX(\d{1,2})\s(\d{1,2}),\s(\d{1,4})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
+ { length => [9..13], params => $MDY,      regex => qr{\AX(\d{1,2})X\s(\d{1,2}),\s(\d{1,4})\z} },
+ { length => [5..22], params => $MDYHMS,   regex => qr{\AX(\d{1,2})X\s(\d{1,2}),\s(\d{1,4})\s$HMS\z} },
+ { length => [7..25], params => $MDYHMSAP, regex => qr{\AX(\d{1,2})X\s(\d{1,2}),\s(\d{1,4})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
 
  # D month, Y | D month, YY | D month, YYYY | DD month, Y | DD month, YY
  # DD month, YYYY
- { length => [8..13],  params => $DMY,      regex => qr{\A(\d{1,2})\sXX(\d{1,2}),?\s(\d{1,4})\z} },
- { length => [13..21], params => $DMYHMS,   regex => qr{\A(\d{1,2})\sXX(\d{1,2}),?\s(\d{1,4})\s$HMS\z} },
- { length => [16..27], params => $DMYHMSAP, regex => qr{\A(\d{1,2})\sXX(\d{1,2}),?\s(\d{1,4})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
+ { length => [8..13],  params => $DMY,      regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\z} },
+ { length => [13..21], params => $DMYHMS,   regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\s$HMS\z} },
+ { length => [16..27], params => $DMYHMSAP, regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
 
  # Dec 03 20:53:10 2009
- { length => [16..21], params => $MDHMSY , regex => qr{\AXX(\d{1,2})\s(\d{1,2})\s$HMS\s(\d{4})\z} } ,
+ { length => [16..21], params => $MDHMSY , regex => qr{\AX(\d{1,2})X\s(\d{1,2})\s$HMS\s(\d{4})\z} } ,
+ { length => [10..18], params => $HMMDY  , regex => qr{\A$HM\sX${MON}X\s$DAY\s$YEAR\z} },
+ # 8:00 px Dec 10th => 8:00pm X12X n10n
+ { length => [14..19]    , params => $HMAPMMDD , regex => qr{\A$HM\s?$AMPM\sX${MON}X\sn${DAY}n\z} ,
+   postprocess => [sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year }, \&_fix_ampm] },
 
  ########################################################
  ##### Bare Numbers
@@ -175,12 +255,14 @@ my $formats =
  # 20060518 12:34:56
  { length => [16..20], params => $YMDHMSAP, regex => qr{\A(\d{4})(\d{2})(\d{2})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
  { length => [14..17], params => $YMDHMS,   regex => qr{\A(\d{4})(\d{2})(\d{2})\s$HMS\z} },
- { length => 15,       params => $YMDHMS,   regex => qr{\A(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\z} },
- { length => 13,       params => $YMDHM,    regex => qr{\A(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})\z} },
- { length => 11,       params => $YMDH,     regex => qr{\A(\d{4})(\d{2})(\d{2})T(\d{2})\z} },
- { length => 8,        params => $YMD,      regex => qr{\A(\d{4})(\d{2})(\d{2})\z} } ,
- { length => 6,        params => $YM,       regex => qr{\A(\d{4})(\d{2})\z} },
- { length => 4,        params => $Y,        regex => qr{\A(\d{4})\z} },
+ # 19960618000000 => 1996-06-18T00:00:00
+ { length => 14,       params => $YMDHMS,   regex => qr{\A(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\z} },
+ { length => 15,       strptime => '%Y%m%dT%H%M%S' } ,
+ { length => 13,       strptime => '%Y%m%dT%H%M' } ,
+ { length => 11,       strptime => '%Y%m%dT%H' } ,
+ { length => 8,        strptime => '%Y%m%d' } ,
+ { length => 6,        strptime => '%Y%m' } ,
+ { length => 4,        strptime => '%Y' } ,
 
  ########################################################
  ##### bare times
@@ -188,40 +270,80 @@ my $formats =
  { length => [5..8],
    params => [ qw( hour minute second ) ] ,
    regex => qr{\A$HMS\z} ,
-   extra => { year => DateTime->now->year ,
-              month => DateTime->now->month ,
-              day => DateTime->now->day } } ,
+   postprocess => sub {
+       my %args = @_;
+       $args{parsed}{year} = __PACKAGE__->base->year;
+       $args{parsed}{month} = __PACKAGE__->base->month;
+       $args{parsed}{day} = __PACKAGE__->base->day;
+   }
+ },
  # HH:MM
  { length => [3..5],
    params => [ qw( hour minute ) ] ,
    regex => qr{\A$HM\z} ,
-   extra => { year => DateTime->now->year ,
-              month => DateTime->now->month ,
-              day => DateTime->now->day } } ,
+   postprocess => sub {
+       my %args = @_;
+       $args{parsed}{year} = __PACKAGE__->base->year;
+       $args{parsed}{month} = __PACKAGE__->base->month;
+       $args{parsed}{day} = __PACKAGE__->base->day;
+   }
+ },
  # HH:MM am
- { length => [7..10],
+ { length => [5..10],
    params => [ qw( hour minute ampm ) ] ,
    regex => qr{\A$HM\s?$AMPM\z} ,
-   extra => { year => DateTime->now->year ,
-              month => DateTime->now->month ,
-              day => DateTime->now->day } ,
-   postprocess => \&_fix_ampm } ,
+   postprocess => [sub {
+       my %args = @_;
+       $args{parsed}{year} = __PACKAGE__->base->year;
+       $args{parsed}{month} = __PACKAGE__->base->month;
+       $args{parsed}{day} = __PACKAGE__->base->day;
+   }, \&_fix_ampm ]
+ } ,
+
+ # HH am
+ { length => [2..5],
+   params => [ qw( hour ampm ) ] ,
+   regex => qr{\A$HOUR\s?$AMPM\z} ,
+   postprocess => [sub {
+       my %args = @_;
+       $args{parsed}{year} = __PACKAGE__->base->year;
+       $args{parsed}{month} = __PACKAGE__->base->month;
+       $args{parsed}{day} = __PACKAGE__->base->day;
+   }, \&_fix_ampm ]
+ } ,
 
  # Day of year
  # 1999345 => 1999, 345th day of year
- { length => [5,7],    params => [ qw( year doy ) ] ,                         regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\z} ,               postprocess => [ \&_fix_year , \&_fix_day_of_year ] } ,
- { length => [10..18], params => [ qw( year doy hour minute second ) ] ,      regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\z} ,         postprocess => [ \&_fix_year , \&_fix_day_of_year ] } ,
- { length => [12..21], params => [ qw( year doy hour minute second ampm ) ] , regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\s?$AMPM\z} , postprocess => [ \&_fix_year , \&_fix_day_of_year , \&_fix_ampm ]} ,
+ { length => [5,7],    params => [ qw( year doy ) ] ,
+   regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\z} ,
+   postprocess => [ \&_fix_year , \&_fix_day_of_year ] } ,
+ { length => [10..18], params => [ qw( year doy hour minute second ) ] ,
+   regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\z} ,
+   postprocess => [ \&_fix_year , \&_fix_day_of_year ] } ,
+ { length => [12..21], params => [ qw( year doy hour minute second ampm ) ] ,
+   regex => qr{\A$YEAR(?:$DELIM)?(\d{3})\s$HMS\s?$AMPM\z} ,
+   postprocess => [ \&_fix_year , \&_fix_day_of_year , \&_fix_ampm ]} ,
+
+ # this is the format for Websphere mq
+ # http://publib.boulder.ibm.com/infocenter/wmqv6/v6r0/index.jsp?topic=/com.ibm.mq.csqzak.doc/js01396.htm
+ # hundreths are not a valid parameter to DateTime->new, so we turn them into nanoseconds
+ { length => [16], params => $YMDHMSNS , regex => qr{\A(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\z} ,
+   postprocess => sub {
+       my %args = @_;
+       my $t = sprintf( '%s0' , $args{parsed}{nanosecond} ) * 1_000_000;
+       $args{parsed}{nanosecond} = $t;
+   }
+ },
 
  # nanoseconds. no length here, we do not know how many digits they will use for nanoseconds
- { params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)${HMS}${HMSDELIM}(\d+)\z} } ,
+ { params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)T?${HMS}${HMSDELIM}(\d+)T?\z} } ,
 
  # epochtime
  {
    params => [] , # we specifically set the params below
    regex => qr{\A\d+\.?\d+?\z} , postprocess => sub {
        my %args = @_;
-       my $dt =  DateTime->from_epoch( epoch => $args{input} );
+       my $dt = DateTime->from_epoch( epoch => $args{input} );
        $args{parsed}{year} = $dt->year;
        $args{parsed}{month} = $dt->month;
        $args{parsed}{day} = $dt->day;
@@ -231,16 +353,15 @@ my $formats =
        $args{parsed}{nanosecond} = $dt->nanosecond;
        return 1;
    }
-} ,
-
+ },
 ];
 
-DateTime::Format::Builder->create_class( parsers => { build => $formats } );
+DateTime::Format::Builder->create_class( parsers => { parse_datetime => $formats } );
 
-sub parse_datetime
+sub build
 {
     my $self = shift;
-    return $self->build( @_ );
+    return $self->parse_datetime( @_ );
 }
 
 sub _fix_day_of_year
@@ -250,8 +371,10 @@ sub _fix_day_of_year
     my $doy = $args{parsed}{doy};
     delete $args{parsed}{doy};
 
-    my $dt = DateTime->from_day_of_year( year => $args{parsed}{year} ,
-                                         day_of_year => $doy );
+    my $dt = DateTime->from_day_of_year(
+        year => $args{parsed}{year} ,
+        day_of_year => $doy
+    );
     $args{parsed}{month} = $dt->month;
     $args{parsed}{day} = $dt->day;
 
@@ -263,37 +386,6 @@ sub _fix_alpha
     my %args = @_;
     my ($date, $p) = @args{qw( input parsed )};
     my %extra_args = @{$args{args}} if exists $args{args};
-
-    my %months =
-    (
-     'Jan(?:uary)?'        => 1,
-     'Feb(?:ruary)?'       => 2,
-     'Mar(?:ch)?'          => 3,
-     'Apr(?:il)?'          => 4,
-     'May'                 => 5,
-     'Jun(?:e)?'           => 6,
-     'Jul(?:y)?'           => 7,
-     'Aug(?:ust)?'         => 8,
-     'Sep(?:t)?(?:ember)?' => 9,
-     'Oct(?:ober)?'        => 10,
-     'Nov(?:ember)?'       => 11,
-     'Dec(?:ember)?'       => 12,
-    );
-    my %days =
-    (
-     'Mon(?:day)?'    => 1,
-     'Tue(?:day)?'    => 2,
-     'Wed(?:nesday)?' => 3,
-     'Thu(?:rsday)?'  => 4,
-     'Fri(?:day)?'    => 5,
-     'Sat(?:urday)?'  => 6,
-     'Sun(?:day)?'    => 7,
-    );
-    my %hours =
-    (
-     noon     => '12:00:00' ,
-     midnight => '00:00:00' ,
-    );
 
     if ( exists $extra_args{strip} )
     {
@@ -311,78 +403,32 @@ sub _fix_alpha
         }
     }
 
+    if ( exists $extra_args{base} )
+    {
+        __PACKAGE__->base( $extra_args{base} );
+    }
+
+    ( $date , $p ) = _parse_timezone( $date , $p , \%extra_args );
+
     $date = _clean_whitespace( $date );
 
-    # remove any trailing 'Z' => UTC
-    if ( $date =~ m{Z\z}mx )
-    {
-        $date =~ s{Z\z}{}mx;
-        $p->{time_zone} = 'UTC';
-    }
-
-    # set any trailing string timezones
-    if ( my ( $tz ) = $date =~ m{\s+(\D+\d?\D+?)\z} )
-    {
-        my $orig_tz = $tz;
-        if ( exists $extra_args{tz_map}->{$tz} )
-        {
-            $tz = $extra_args{tz_map}->{$tz};
-        }
-        if ( DateTime::TimeZone->is_valid_name( $tz ) )
-        {
-            $date =~ s{\Q$orig_tz\E}{};
-            $p->{time_zone} = $tz;
-        }
-    }
-
-    # set any trailing offset timezones
-    if ( my ( $tz ) = $date =~ m{(?:\s+)?(\+[\d]+)\z}mx )
-    {
-        $date =~ s{\Q$tz\E}{};
-        # some timezones are 2 digit hours, add the minutes part
-        $tz .= '00' if ( length( $tz ) == 3 );
-        $p->{time_zone} = $tz;
-    }
-
-    # remove ' of' as in '16th of November 2003'
-    if ( $date =~ m{\sof\s}mx )
-    {
-        ( $p->{ day } ) = $date =~ s{\sof\s}{ }gmix;
-    }
-
-    # fix noon and midnight
-    foreach my $hour ( keys %hours )
-    {
-        if ( $date =~ m{$hour}mxi )
-        {
-            my $realtime = $hours{ $hour };
-            $date =~ s{$hour}{$realtime}gmix;
-        }
-    }
-
-    # remove any day names, we do not need them
-    foreach my $day_name ( keys %days )
-    {
-        if ( $date =~ m{$day_name}mxi )
-        {
-            $date =~ s{$day_name,?}{}gmix;
-        }
-    }
-
-    $date = _clean_whitespace( $date );
+    my $lang = DateTime::Format::Flexible::lang->new(
+        lang => $extra_args{lang},
+        base => __PACKAGE__->base,
+    );
+    ( $date , $p ) = $lang->_cleanup_alpha( $date , $p );
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
     $date =~ s{\A$DELIM+}{}mx;      # remove any leading delimeters
     $date =~ s{$DELIM+\z}{}mx;      # remove any trailing delimeters
 
-    # turn month names into month numbers with leading XX
-    # Sep => XX9
-    while( my( $month_name , $month_number ) = each ( %months ) )
+    # if we have two digits at the beginning of our date that are greater than 31,
+    # we have a possible two digit year
+    if ( my ( $possible_year , $remaining ) = $date =~ m{\A(\d\d)($DELIM.+)}mx )
     {
-        if( $date =~ m{$month_name}mxi )
+        if ( $possible_year > 31 )
         {
-            $p->{ month } = $month_number;
-            $date =~ s{$month_name}{XX$month_number}mxi;
+            $date =~ s{\A(\d\d)}{Y$1Y}mx;
         }
     }
 
@@ -395,14 +441,75 @@ sub _fix_alpha
         }
     }
 
-    # remove number extensions
-    my $day_match = qr{(\d{1,2})(?:st|nd|rd|th)} ;
-    if( $date =~ m{$day_match}mxi )
-    {
-        ( $p->{ day } ) = $date =~ s{$day_match}{$1}mxi;
-    }
-#    printf( "--->%s (%s)\n" , $date , length( $date ) );
+    printf( "#-->%s (%s) [%s] \n" , $date , length( $date ) , $p->{time_zone}||q{none} ) if $ENV{DFF_DEBUG};
     return $date;
+}
+
+sub _parse_timezone
+{
+    my ( $date , $p , $extra_args ) = @_;
+
+    while ( my ( $abbrev , $tz ) = each( %{ $extra_args->{tz_map} } ) )
+    {
+        if ( $date =~ m{$abbrev} )
+        {
+            $date =~ s{\Q$abbrev\E}{};
+            $p->{time_zone} = $tz;
+            return ( $date , $p );
+        }
+    }
+
+    # remove any trailing 'Z' => UTC
+    if ( $date =~ m{Z\z}mx )
+    {
+        $date =~ s{Z\z}{}mx;
+        $p->{time_zone} = 'UTC';
+        return ( $date , $p );
+    }
+
+    # set any trailing string timezones.  they cannot start with a digit
+    if ( my ( $tz ) = $date =~ m{.+\s+(\D[^\s]+)\z} )
+    {
+        my $orig_tz = $tz;
+        if ( exists $extra_args->{tz_map}->{$tz} )
+        {
+            $tz = $extra_args->{tz_map}->{$tz};
+        }
+        if ( DateTime::TimeZone->is_valid_name( $tz ) )
+        {
+            $date =~ s{\Q$orig_tz\E}{};
+            $p->{time_zone} = $tz;
+            return ( $date , $p );
+        }
+    }
+
+    # set any trailing offset timezones
+    if ( my ( $tz ) = $date =~ m{((?:\s+)?\+\d{2,4}|\s+\-\d{4})\.?\z}mx )
+    {
+        $date =~ s{\Q$tz\E}{};
+        # some timezones are 2 digit hours, add the minutes part
+        $tz = _clean_whitespace( $tz );
+        $tz .= '00' if ( length( $tz ) == 3 );
+        $p->{time_zone} = $tz;
+        return ( $date , $p );
+    }
+
+    return ( $date , $p );
+}
+
+sub _do_math
+{
+    my ( $string ) = @_;
+    if ( $string =~ m{ago}mx )
+    {
+        my $base_dt = __PACKAGE__->base;
+        if ( my ( $amount , $unit ) = $string =~ m{(\d+)\s([^\s]+)}mx )
+        {
+            $unit .= 's' if ( $unit !~ m{s\z} ); # make sure the unit ends in 's'
+            return $base_dt->subtract( $unit => $amount );
+        }
+    }
+    return $string;
 }
 
 sub _clean_whitespace
@@ -424,7 +531,7 @@ sub _fix_ampm
     my $ampm = $args{parsed}{ampm};
     delete $args{parsed}{ampm};
 
-    if ( $ampm =~ m{a\.?m\.?}mix )
+    if ( $ampm =~ m{a\.?m?\.?}mix )
     {
         if( $args{parsed}{hour} == 12 )
         {
@@ -432,7 +539,7 @@ sub _fix_ampm
         }
         return 1;
     }
-    elsif ( $ampm =~ m{p\.?m\.?}mix )
+    elsif ( $ampm =~ m{p\.?m?\.?}mix )
     {
         $args{parsed}{hour} += 12;
         if ( $args{parsed}{hour} == 24 )
@@ -507,19 +614,19 @@ this module is for you.
 F<DateTime::Format::Flexible> attempts to take any string you give it and parse
 it into a DateTime object.
 
-The test file tests 2500+ variations of date/time strings.  If you can think of
-any that I do not cover, please let me know.
-
 =head1 USAGE
 
 This module uses F<DateTime::Format::Builder> under the covers.
 
-=head2 build, parse_datetime
+=head2 build
 
-build and parse_datetime do the same thing.  Give it a string and it
-attempts to parse it and return a DateTime object.
+an alias for parse_datetime
 
-If it can't it will throw an exception.
+=head2 parse_datetime
+
+Give it a string and it attempts to parse it and return a DateTime object.
+
+If it cannot it will throw an exception.
 
  my $dt = DateTime::Format::Flexible->build( $date );
 
@@ -527,14 +634,20 @@ If it can't it will throw an exception.
 
  my $dt = DateTime::Format::Flexible->parse_datetime(
      $date,
-     strip    => [qr{\.\z}],
-     tz_map   => {EDT => 'America/New_York'},
-     european => 1
+     strip    => [qr{\.\z}],                  # optional, remove a trailing period
+     tz_map   => {EDT => 'America/New_York'}, # optional, map the EDT timezone to America/New_York
+     lang     => ['en'],                      # optional, only parse using spanish
+     european => 1                            # optional, catch some cases of DD-MM-YY
  );
 
 =over 4
 
-=item * C<strip>
+=item * C<base> (optional)
+
+Does the same thing as the method C<base>.  Sets a base datetime to
+for incomplete dates.  Requires a valid DateTime object as an argument.
+
+=item * C<strip> (optional)
 
 Remove a substring from the string you are trying to parse.
 You can pass multiple regexes in an arrayref.
@@ -550,7 +663,7 @@ example:
 This is helpful if you have a load of dates you want to normalize and you know
 of some weird formatting beforehand.
 
-=item * C<tz_map>
+=item * C<tz_map> (optional)
 
 map a given timezone to another recognized timezone
 Values are given as a hashref.
@@ -566,7 +679,30 @@ example:
 This is helpful if you have a load of dates that have timezones that are not
 recognized by F<DateTime::Timezone>.
 
-=item * C<european>
+=item * C<lang> (optional)
+
+Specify the language map plugins to use.
+
+When DateTime::Format::Flexible parses a date with a string in it, it will
+search for a way to convert that string to a number.  By default it will
+search through all the language plugins to search for a match.
+
+Setting this lets you limit the scope of the search
+
+example:
+
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+     'Wed, Jun 10, 2009' ,
+     lang => ['en']
+ );
+ # $dt is now 2009-06-10T00:00:00
+
+Currently supported languages are english (en) and spanish (es).
+Contributions, corrections, requests and examples are VERY welcome.
+See the F<DateTime::Format::Flexible::lang::en> and
+F<DateTime::Dormat::Flexible::lang::es> for examples of the plugins.
+
+=item * C<european> (optional)
 
 If european is set to a true value, an attempt will be made to parse as a
 DD-MM-YYYY date instead of the default MM-DD-YYYY.  There is a chance
@@ -580,6 +716,17 @@ example:
  # $dt is now 2010-06-16T00:00:00
 
 =back
+
+=head2 base
+
+gets/sets the base DateTime for incomplete dates.  Requires a valid DateTime
+object as an argument when settings.
+
+example:
+
+ DateTime::Format::Flexible->base( DateTime->new( year => 2009, month => 6, day => 22 ) );
+ my $dt = DateTime::Format::Flexible->parse_datetime( '23:59' );
+ # $dt is now 2009-06-22T23:59:00
 
 =head2 Example formats
 
@@ -628,7 +775,8 @@ A small list of supported formats:
 =back
 
 there are 9000+ variations that are detected correctly in the test files
-(see t/data/* for most of them).
+(see t/data/* for most of them).  If you can think of any that I do not
+cover, please let me know.
 
 =head1 NOTES
 
@@ -636,7 +784,7 @@ The DateTime website http://datetime.perl.org/?Modules as of march 2008
 lists this module under 'Confusing' and recommends the use of
 F<DateTime::Format::Natural>.
 
-Unfortunately I do not agree.  F<DateTime::Format::Natural> currently fails
+Unfortunately I do not agree.  F<DateTime::Format::Natural> fails
 more than 2000 of my parsing tests.  F<DateTime::Format::Flexible> supports
 different types of date/time strings than F<DateTime::Format::Natural>.
 I think there is utility in that can be found in both of them.
@@ -646,14 +794,14 @@ any crazy date/time string that a user might care to enter.
 F<DateTime::Format::Natural> seems to be a little stricter in what it can
 parse.
 
-=head1 BUGS
+=head1 BUGS/LIMITATIONS
 
-You cannot use a 1 or 2 digit year as the first field:
+You cannot use a 1 or 2 digit year as the first field unless the year is > 12:
 
- YY-MM-DD # not supported
+ YY-MM-DD # not supported if YY is <= 31
  Y-MM-DD  # not supported
 
-It would get confused with MM-DD-YY
+It gets confused with MM-DD-YY
 
 =head1 AUTHOR
 
@@ -663,15 +811,22 @@ It would get confused with MM-DD-YY
     cpan@punch.net
     http://www.punch.net/
 
-=head1 COPYRIGHT and LICENSE
+=head1 COPYRIGHT & LICENSE
 
-Copyright 2007-2009 Tom Heady
+    Copyright 2007-2010 Tom Heady.
 
-This program is free software; you can redistribute
-it and/or modify it under the same terms as Perl itself.
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of either:
 
-The full text of the license can be found in the
-LICENSE file included with this module.
+=over 4
+
+=item * the GNU General Public License as published by the Free
+    Software Foundation; either version 1, or (at your option) any
+    later version, or
+
+=item * the Artistic License version 2.0.
+
+=back
 
 =head1 SEE ALSO
 
