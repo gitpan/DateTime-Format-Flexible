@@ -115,7 +115,13 @@ sub string_dates
         hoy    => sub { return $base_dt->clone->truncate( to => 'day' )->ymd } ,                       # today
         manana => sub { return $base_dt->clone->truncate( to => 'day' )->add( days => 1 )->ymd },      # tomorrow
         ayer   => sub { return $base_dt->clone->truncate( to => 'day' )->subtract( days => 1 )->ymd }, # yesterday
-        #overmorrow => sub { return DateTime->today->add( days => 2 )->ymd },      # overmorrow
+        'pasado manana' => sub { return DateTime->today->add( days => 2 )->ymd },      # overmorrow (the day after tomorrow)
+        epoca       => sub { return DateTime->from_epoch( epoch => 0 ) },
+        '-infinito' => sub { return DateTime::Infinite::Past->new },
+        infinito    => sub { return DateTime::Infinite::Future->new },
+
+
+
     );
 }
 

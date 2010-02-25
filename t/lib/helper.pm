@@ -18,7 +18,6 @@ sub run_tests
         next if $line =~ m{\A\#}mx; # skip comments
         next if $line =~ m{\A\z}mx; # skip blank lines
         my ( $given , $wanted , $tz ) = split m{\s+=>\s+}mx , $line;
-
         compare( $given , $wanted , $tz );
     }
 }

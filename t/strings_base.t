@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 49;
+use Test::More tests => 53;
 
 use DateTime::Format::Flexible;
 my $base = 'DateTime::Format::Flexible';
@@ -60,6 +60,8 @@ t::lib::helper::run_tests(
     'october => 2005-10-01T00:00:00',
     'november => 2005-11-01T00:00:00',
     'december => 2005-12-01T00:00:00',
+    'allballs => 2005-06-07T00:00:00',
+    'epoch => 1970-01-01T00:00:00',
 );
 
 
@@ -75,4 +77,16 @@ t::lib::helper::run_tests(
     my $dt = $base->parse_datetime( $str , tz_map => { PST => 'America/Los_Angeles' } );
     is ( $dt , $wanted , "$str => $wanted ($dt)" );
     is ( $dt->time_zone->name , 'America/Los_Angeles' , "timezone set ($str)" );
+}
+
+{
+    my ( $str , $wanted ) = ( '-infinity' ,  '-inf' );
+    my $dt = $base->parse_datetime( $str );
+    is ( $dt , $wanted , "$str => $wanted" );
+}
+
+{
+    my ( $str , $wanted ) = ( 'infinity' ,  'inf' );
+    my $dt = $base->parse_datetime( $str );
+    is ( $dt , $wanted , "$str => $wanted" );
 }

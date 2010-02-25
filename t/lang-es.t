@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 14;
 use DateTime;
 
 use t::lib::helper;
@@ -11,7 +11,6 @@ use t::lib::helper;
 use DateTime::Format::Flexible;
 
 my $curr_year = DateTime->now->year;
-
 
 {
     my $dt = DateTime::Format::Flexible->parse_datetime(
@@ -37,4 +36,17 @@ t::lib::helper::run_tests(
     "4 de julio => $curr_year-07-04T00:00:00",
     '25 de diciembre de 2000 => 2000-12-25T00:00:00',
     "3 de agosto => $curr_year-08-03T00:00:00",
+    'epoca => 1970-01-01T00:00:00',
 );
+
+{
+    my ( $str , $wanted ) = ( '-infinito' ,  '-inf' );
+    my $dt = DateTime::Format::Flexible->parse_datetime( $str );
+    is ( $dt , $wanted , "$str => $wanted" );
+}
+
+{
+    my ( $str , $wanted ) = ( 'infinito' ,  'inf' );
+    my $dt = DateTime::Format::Flexible->parse_datetime( $str );
+    is ( $dt , $wanted , "$str => $wanted" );
+}

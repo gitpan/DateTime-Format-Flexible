@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               DateTime-Format-Flexible
-version:            0.10
+version:            0.11
 abstract:           DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.
 author:
     - Tom Heady (cpan@punch.net)
@@ -16,7 +16,6 @@ requires:
     DateTime::TimeZone:   0
     List::MoreUtils:      0
     Module::Pluggable:    0
-    Readonly:             0.06
     Test::Simple:         0.44
 no_index:
     directory:

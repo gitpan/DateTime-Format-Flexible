@@ -2,78 +2,77 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use base 'DateTime::Format::Builder';
 
 use DateTime::Format::Flexible::lang;
-use Readonly;
 use Carp 'croak';
 
-Readonly my $DELIM  => qr{(?:\\|\/|-|\.|\s)};
-Readonly my $HMSDELIM => qr{(?:\.|:)};
-Readonly my $YEAR => qr{(\d{1,4})};
-Readonly my $MON => qr{(\d\d?)};
-Readonly my $DAY => qr{(\d\d?)};
-Readonly my $HOUR => qr{(\d\d?)};
-Readonly my $HM => qr{(\d\d?)$HMSDELIM(\d\d?)};
-Readonly my $HMS => qr{(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)};
-Readonly my $HMSNS => qr{T?(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d+)T?};
-Readonly my $AMPM => qr{(a\.?m?|p\.?m?)\.?}i;
+my $DELIM  = qr{(?:\\|\/|-|\.|\s)};
+my $HMSDELIM = qr{(?:\.|:)};
+my $YEAR = qr{(\d{1,4})};
+my $MON = qr{(\d\d?)};
+my $DAY = qr{(\d\d?)};
+my $HOUR = qr{(\d\d?)};
+my $HM = qr{(\d\d?)$HMSDELIM(\d\d?)};
+my $HMS = qr{(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)};
+my $HMSNS = qr{T?(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d\d?)$HMSDELIM(\d+)T?};
+my $AMPM = qr{(a\.?m?|p\.?m?)\.?}i;
 
-Readonly my $MMDDYYYY => qr{(\d{1,2})$DELIM(\d{1,2})$DELIM(\d{1,4})};
-Readonly my $YYYYMMDD => qr{(\d{4})$DELIM(\d{1,2})$DELIM(\d{1,2})};
-Readonly my $MMDD => qr{(\d{1,2})$DELIM(\d{1,2})};
-Readonly my $XMMXDD => qr{X(\d{1,2})X$DELIM(\d{1,2})};
-Readonly my $DDXMMX => qr{(\d{1,2})${DELIM}X(\d{1,2})X};
-Readonly my $DDXMMXYYYY => qr{(\d{1,2})${DELIM}X(\d{1,2})X$DELIM(\d{1,4})};
-Readonly my $MMYYYY => qr{(\d{1,2})$DELIM(\d{4})};
-Readonly my $XMMXYYYY => qr{X(\d{1,2})X${DELIM}(\d{4})};
-Readonly my $XMMXDDYYYY => qr{X(\d{1,2})X${DELIM}(\d{1,2})$DELIM(\d{1,4})};
+my $MMDDYYYY = qr{(\d{1,2})$DELIM(\d{1,2})$DELIM(\d{1,4})};
+my $YYYYMMDD = qr{(\d{4})$DELIM(\d{1,2})$DELIM(\d{1,2})};
+my $MMDD = qr{(\d{1,2})$DELIM(\d{1,2})};
+my $XMMXDD = qr{X(\d{1,2})X$DELIM(\d{1,2})};
+my $DDXMMX = qr{(\d{1,2})${DELIM}X(\d{1,2})X};
+my $DDXMMXYYYY = qr{(\d{1,2})${DELIM}X(\d{1,2})X$DELIM(\d{1,4})};
+my $MMYYYY = qr{(\d{1,2})$DELIM(\d{4})};
+my $XMMXYYYY = qr{X(\d{1,2})X${DELIM}(\d{4})};
+my $XMMXDDYYYY = qr{X(\d{1,2})X${DELIM}(\d{1,2})$DELIM(\d{1,4})};
 
-Readonly my $HMMDY => [ qw( hour minute month day year ) ];
-Readonly my $HMAPMMDD => [ qw( hour minute ampm month day ) ];
-Readonly my $DM => [ qw( day month ) ];
-Readonly my $DMY => [ qw( day month year ) ];
-Readonly my $DMHM => [ qw( day month hour minute ) ];
-Readonly my $DMHMS => [ qw( day month hour minute second ) ];
-Readonly my $DMHMSAP => [ qw( day month hour minute second ampm ) ];
-Readonly my $DMYHM => [ qw( day month year hour minute ) ];
-Readonly my $DMYHMS => [ qw( day month year hour minute second ) ];
-Readonly my $DMYHMSNS => [ qw( day month year hour minute second nanosecond ) ];
-Readonly my $DMYHMSAP => [ qw( day month year hour minute second ampm ) ];
+my $HMMDY = [ qw( hour minute month day year ) ];
+my $HMAPMMDD = [ qw( hour minute ampm month day ) ];
+my $DM = [ qw( day month ) ];
+my $DMY = [ qw( day month year ) ];
+my $DMHM = [ qw( day month hour minute ) ];
+my $DMHMS = [ qw( day month hour minute second ) ];
+my $DMHMSAP = [ qw( day month hour minute second ampm ) ];
+my $DMYHM = [ qw( day month year hour minute ) ];
+my $DMYHMS = [ qw( day month year hour minute second ) ];
+my $DMYHMSNS = [ qw( day month year hour minute second nanosecond ) ];
+my $DMYHMSAP = [ qw( day month year hour minute second ampm ) ];
 
-Readonly my $M => [ qw( month ) ];
-Readonly my $MD => [ qw( month day ) ];
-Readonly my $MY => [ qw( month year ) ];
-Readonly my $MDY => [ qw( month day year ) ];
-Readonly my $MDHMS => [ qw( month day hour minute second ) ];
-Readonly my $MDHMSAP => [ qw( month day hour minute second ampm ) ];
-Readonly my $MYHMS => [ qw( month year hour minute second ) ];
-Readonly my $MYHMSAP => [ qw( month year hour minute second ampm ) ];
-Readonly my $MDYHMS => [ qw( month day year hour minute second ) ];
-Readonly my $MDYHMAP => [ qw( month day year hour minute ampm ) ];
-Readonly my $MDYHMSAP => [ qw( month day year hour minute second ampm ) ];
-Readonly my $MDHMSY => [ qw( month day hour minute second year ) ];
+my $M = [ qw( month ) ];
+my $MD = [ qw( month day ) ];
+my $MY = [ qw( month year ) ];
+my $MDY = [ qw( month day year ) ];
+my $MDHMS = [ qw( month day hour minute second ) ];
+my $MDHMSAP = [ qw( month day hour minute second ampm ) ];
+my $MYHMS = [ qw( month year hour minute second ) ];
+my $MYHMSAP = [ qw( month year hour minute second ampm ) ];
+my $MDYHMS = [ qw( month day year hour minute second ) ];
+my $MDYHMAP = [ qw( month day year hour minute ampm ) ];
+my $MDYHMSAP = [ qw( month day year hour minute second ampm ) ];
+my $MDHMSY = [ qw( month day hour minute second year ) ];
 
-Readonly my $Y => [ qw( year ) ];
-Readonly my $YM => [ qw( year month ) ];
-Readonly my $YMD => [ qw( year month day ) ];
-Readonly my $YMDH => [ qw( year month day hour ) ];
-Readonly my $YHMS => [ qw( year hour minute second ) ];
-Readonly my $YMDHM => [ qw( year month day hour minute ) ];
-Readonly my $YMHMS => [ qw( year month hour minute second ) ];
-Readonly my $YMDHAP => [ qw( year month day hour ampm ) ];
-Readonly my $YMDHMS => [ qw( year month day hour minute second ) ];
-Readonly my $YMDHMAP => [ qw( year month day hour minute ampm ) ];
-Readonly my $YMHMSAP => [ qw( year month hour minute second ampm ) ];
-Readonly my $YMDHMSAP => [ qw( year month day hour minute second ampm ) ];
-Readonly my $YMDHMSNS => [ qw( year month day hour minute second nanosecond ) ];
-Readonly my $YMDHMSNSAP => [ qw( year month day hour minute second nanosecond ampm ) ];
+my $Y = [ qw( year ) ];
+my $YM = [ qw( year month ) ];
+my $YMD = [ qw( year month day ) ];
+my $YMDH = [ qw( year month day hour ) ];
+my $YHMS = [ qw( year hour minute second ) ];
+my $YMDHM = [ qw( year month day hour minute ) ];
+my $YMHMS = [ qw( year month hour minute second ) ];
+my $YMDHAP = [ qw( year month day hour ampm ) ];
+my $YMDHMS = [ qw( year month day hour minute second ) ];
+my $YMDHMAP = [ qw( year month day hour minute ampm ) ];
+my $YMHMSAP = [ qw( year month hour minute second ampm ) ];
+my $YMDHMSAP = [ qw( year month day hour minute second ampm ) ];
+my $YMDHMSNS = [ qw( year month day hour minute second nanosecond ) ];
+my $YMDHMSNSAP = [ qw( year month day hour minute second nanosecond ampm ) ];
 
 use DateTime;
 use DateTime::TimeZone;
-use DateTime::Format::Builder;
+use DateTime::Format::Builder '0.74';
 
 my $base_dt = DateTime->now;
 sub base
@@ -335,13 +334,31 @@ my $formats =
    }
  },
 
+ {
+     params => [],
+     length => [3],
+     regex  => qr{\Ainf\z},
+     constructor => sub {
+         return DateTime::Infinite::Future->new;
+     },
+ },
+ {
+     params => [],
+     length => [4],
+     regex  => qr{\A\-inf\z},
+     constructor => sub {
+         return DateTime::Infinite::Past->new;
+     },
+ },
+
  # nanoseconds. no length here, we do not know how many digits they will use for nanoseconds
  { params => [ qw( year month day hour minute second nanosecond ) ] , regex => qr{\A$YYYYMMDD(?:\s|T)T?${HMS}${HMSDELIM}(\d+)T?\z} } ,
 
  # epochtime
  {
    params => [] , # we specifically set the params below
-   regex => qr{\A\d+\.?\d+?\z} , postprocess => sub {
+   regex => qr{\A\d+\.?\d+?\z} ,
+   postprocess => sub {
        my %args = @_;
        my $dt = DateTime->from_epoch( epoch => $args{input} );
        $args{parsed}{year} = $dt->year;
@@ -416,10 +433,12 @@ sub _fix_alpha
         lang => $extra_args{lang},
         base => __PACKAGE__->base,
     );
-    ( $date , $p ) = $lang->_cleanup_alpha( $date , $p );
+    ( $date , $p ) = $lang->_cleanup( $date , $p );
+
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
-    $date =~ s{\A$DELIM+}{}mx;      # remove any leading delimeters
+    # remove any leading delimeters
+    $date =~ s{\A$DELIM+}{}mx if ( not $date eq '-inf' );
     $date =~ s{$DELIM+\z}{}mx;      # remove any trailing delimeters
 
     # if we have two digits at the beginning of our date that are greater than 31,
@@ -618,17 +637,11 @@ it into a DateTime object.
 
 This module uses F<DateTime::Format::Builder> under the covers.
 
-=head2 build
-
-an alias for parse_datetime
-
 =head2 parse_datetime
 
 Give it a string and it attempts to parse it and return a DateTime object.
 
 If it cannot it will throw an exception.
-
- my $dt = DateTime::Format::Flexible->build( $date );
 
  my $dt = DateTime::Format::Flexible->parse_datetime( $date );
 
@@ -636,7 +649,7 @@ If it cannot it will throw an exception.
      $date,
      strip    => [qr{\.\z}],                  # optional, remove a trailing period
      tz_map   => {EDT => 'America/New_York'}, # optional, map the EDT timezone to America/New_York
-     lang     => ['en'],                      # optional, only parse using spanish
+     lang     => ['es'],                      # optional, only parse using spanish
      european => 1                            # optional, catch some cases of DD-MM-YY
  );
 
@@ -644,8 +657,17 @@ If it cannot it will throw an exception.
 
 =item * C<base> (optional)
 
-Does the same thing as the method C<base>.  Sets a base datetime to
-for incomplete dates.  Requires a valid DateTime object as an argument.
+Does the same thing as the method C<base>.  Sets a base datetime for
+incomplete dates.  Requires a valid DateTime object as an argument.
+
+example:
+
+ my $base_dt = DateTime->new( year => 2005, month => 2, day => 1 );
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+    '18 Mar',
+     base => $base_dt
+ );
+ # $dt is now 2005-03-18T00:00:00
 
 =item * C<strip> (optional)
 
@@ -720,13 +742,17 @@ example:
 =head2 base
 
 gets/sets the base DateTime for incomplete dates.  Requires a valid DateTime
-object as an argument when settings.
+object as an argument when setting.
 
 example:
 
  DateTime::Format::Flexible->base( DateTime->new( year => 2009, month => 6, day => 22 ) );
  my $dt = DateTime::Format::Flexible->parse_datetime( '23:59' );
  # $dt is now 2009-06-22T23:59:00
+
+=head2 build
+
+an alias for parse_datetime
 
 =head2 Example formats
 
@@ -780,7 +806,20 @@ cover, please let me know.
 
 =head1 NOTES
 
-The DateTime website http://datetime.perl.org/?Modules as of march 2008
+As of version 0.11 you will get a DateTime::Infinite::Future object
+if the passed in date is 'infinity' and a DateTime::Infinite::Past object
+if the passed in date is '-infinity'.  If you are expecting these types of
+strings, you might want to check for 'is_infinite()' from the object returned.
+
+example:
+
+ my $dt = DateTime::Format::Flexible->parse_datetime( 'infinity' );
+ if ( $dt->is_infinite )
+ {
+      # you have a Infinite object.
+ }
+
+The DateTime website http://datetime.perl.org/?Modules as of february 2010
 lists this module under 'Confusing' and recommends the use of
 F<DateTime::Format::Natural>.
 
@@ -796,7 +835,7 @@ parse.
 
 =head1 BUGS/LIMITATIONS
 
-You cannot use a 1 or 2 digit year as the first field unless the year is > 12:
+You cannot use a 1 or 2 digit year as the first field unless the year is > 31:
 
  YY-MM-DD # not supported if YY is <= 31
  Y-MM-DD  # not supported
@@ -805,18 +844,14 @@ It gets confused with MM-DD-YY
 
 =head1 AUTHOR
 
-    Tom Heady
-    CPAN ID: thinc
-    Punch, Inc.
-    cpan@punch.net
-    http://www.punch.net/
+Tom Heady <cpan@punch.net>
 
 =head1 COPYRIGHT & LICENSE
 
-    Copyright 2007-2010 Tom Heady.
+Copyright 2007-2010 Tom Heady.
 
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of either:
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
 
 =over 4
 

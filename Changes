@@ -1,6 +1,13 @@
 Revision history for Perl module DateTime::Format::Flexible
 
-0.10
+0.11
+   - remove Readonly dependency
+   - support some postgresql datetimes: epoch, infinity, -infinity, allballs
+     - see http://www.postgresql.org/docs/8.4/interactive/datatype-datetime.html section 8.5.1.4
+     - 'infinity' returns a DateTime::Infinite::Future object
+     - '-infinity' returns a DateTime::Infinite::Past object
+
+0.10 Wed Feb 24 18:45:00 2009
    - support for single character am/pm strings '3p'
    - support for days of the week (wednesday => the nearest future wednesday) (thanks Shawn Moore, rt #53188)
      - note: this is quite limited, I need more test cases

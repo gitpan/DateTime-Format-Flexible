@@ -13,7 +13,7 @@ sub new
     return $self;
 }
 
-sub _cleanup_alpha
+sub _cleanup
 {
     my ( $self , $date , $p ) = @_;
     foreach my $plug ( $self->plugins )
@@ -91,10 +91,10 @@ sub _string_dates
     my %strings = $plug->string_dates;
     foreach my $key ( keys %strings )
     {
-        if ( $date =~ m{$key}mxi )
+        if ( $date =~ m{\Q$key\E}mxi )
         {
             my $new_value = $strings{$key}->();
-            $date =~ s{$key}{$new_value}mix;
+            $date =~ s{\Q$key\E}{$new_value}mix;
         }
     }
 

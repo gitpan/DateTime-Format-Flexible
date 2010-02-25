@@ -3,6 +3,8 @@ package DateTime::Format::Flexible::lang::en;
 use strict;
 use warnings;
 
+use DateTime::Infinite;
+
 sub new
 {
     my ( $class , %params ) = @_;
@@ -111,11 +113,16 @@ sub string_dates
 {
     my $base_dt = DateTime::Format::Flexible->base;
     return (
-        now        => sub { return $base_dt->datetime } ,
-        today      => sub { return $base_dt->clone->truncate( to => 'day' )->ymd } ,
-        tomorrow   => sub { return $base_dt->clone->truncate( to => 'day' )->add( days => 1 )->ymd },
-        yesterday  => sub { return $base_dt->clone->truncate( to => 'day' )->subtract( days => 1 )->ymd },
-        overmorrow => sub { return $base_dt->clone->truncate( to => 'day' )->add( days => 2 )->ymd },
+        now         => sub { return $base_dt->datetime } ,
+        today       => sub { return $base_dt->clone->truncate( to => 'day' )->ymd } ,
+        tomorrow    => sub { return $base_dt->clone->truncate( to => 'day' )->add( days => 1 )->ymd },
+        yesterday   => sub { return $base_dt->clone->truncate( to => 'day' )->subtract( days => 1 )->ymd },
+        overmorrow  => sub { return $base_dt->clone->truncate( to => 'day' )->add( days => 2 )->ymd },
+        allballs    => sub { return $base_dt->clone->truncate( to => 'day' ) },
+
+        epoch       => sub { return DateTime->from_epoch( epoch => 0 ) },
+        '-infinity' => sub { return DateTime::Infinite::Past->new },
+        infinity    => sub { return DateTime::Infinite::Future->new },
     );
 }
 
