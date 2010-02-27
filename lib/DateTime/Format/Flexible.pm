@@ -2,11 +2,13 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use base 'DateTime::Format::Builder';
 
 use DateTime::Format::Flexible::lang;
+use DateTime::Infinite;
+
 use Carp 'croak';
 
 my $DELIM  = qr{(?:\\|\/|-|\.|\s)};
@@ -336,16 +338,16 @@ my $formats =
 
  {
      params => [],
-     length => [3],
-     regex  => qr{\Ainf\z},
+     length => [8],
+     regex  => qr{\Ainfinity\z},
      constructor => sub {
          return DateTime::Infinite::Future->new;
      },
  },
  {
      params => [],
-     length => [4],
-     regex  => qr{\A\-inf\z},
+     length => [9],
+     regex  => qr{\A\-infinity\z},
      constructor => sub {
          return DateTime::Infinite::Past->new;
      },
@@ -438,7 +440,7 @@ sub _fix_alpha
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
     # remove any leading delimeters
-    $date =~ s{\A$DELIM+}{}mx if ( not $date eq '-inf' );
+    $date =~ s{\A$DELIM+}{}mx if ( not $date eq '-infinity' );
     $date =~ s{$DELIM+\z}{}mx;      # remove any trailing delimeters
 
     # if we have two digits at the beginning of our date that are greater than 31,

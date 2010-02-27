@@ -3,8 +3,6 @@ package DateTime::Format::Flexible::lang::en;
 use strict;
 use warnings;
 
-use DateTime::Infinite;
-
 sub new
 {
     my ( $class , %params ) = @_;
@@ -121,8 +119,8 @@ sub string_dates
         allballs    => sub { return $base_dt->clone->truncate( to => 'day' ) },
 
         epoch       => sub { return DateTime->from_epoch( epoch => 0 ) },
-        '-infinity' => sub { return DateTime::Infinite::Past->new },
-        infinity    => sub { return DateTime::Infinite::Future->new },
+        '-infinity' => sub { '-infinity' },
+        infinity    => sub { 'infinity'  },
     );
 }
 
