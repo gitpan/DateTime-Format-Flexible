@@ -1,5 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.14 Sun Feb 28 2010
+   - fix test: '1 month ago at 4pm' could be potentially less that 28 days ago.
+   - fix tests for infinity, -infinity, infinito, and -infinito
+
 0.13 Sat Feb 27 2010
    - make parsing for infinity and -infinity more reliable
 

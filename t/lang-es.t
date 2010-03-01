@@ -40,13 +40,11 @@ t::lib::helper::run_tests(
 );
 
 {
-    my ( $str , $wanted ) = ( '-infinito' ,  '-inf' );
-    my $dt = DateTime::Format::Flexible->parse_datetime( $str );
-    is ( $dt , $wanted , "$str => $wanted" );
+    my $dt = DateTime::Format::Flexible->parse_datetime( '-infinito' );
+    ok ( $dt->is_infinite() , "-infinito is infinite" );
 }
 
 {
-    my ( $str , $wanted ) = ( 'infinito' ,  'inf' );
-    my $dt = DateTime::Format::Flexible->parse_datetime( $str );
-    is ( $dt , $wanted , "$str => $wanted" );
+    my $dt = DateTime::Format::Flexible->parse_datetime( 'infinito' );
+    ok ( $dt->is_infinite() , "infinito is infinite" );
 }

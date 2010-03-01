@@ -80,13 +80,11 @@ t::lib::helper::run_tests(
 }
 
 {
-    my ( $str , $wanted ) = ( '-infinity' ,  '-inf' );
-    my $dt = $base->parse_datetime( $str );
-    is ( $dt , $wanted , "$str => $wanted" );
+    my $dt = DateTime::Format::Flexible->parse_datetime( '-infinity' );
+    ok ( $dt->is_infinite() , "-infinity is infinite" );
 }
 
 {
-    my ( $str , $wanted ) = ( 'infinity' ,  'inf' );
-    my $dt = $base->parse_datetime( $str );
-    is ( $dt , $wanted , "$str => $wanted" );
+    my $dt = DateTime::Format::Flexible->parse_datetime( 'infinity' );
+    ok ( $dt->is_infinite() , "infinity is infinite" );
 }

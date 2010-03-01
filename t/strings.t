@@ -108,7 +108,7 @@ foreach my $string ( qw( now Now Today yesterday tomorrow overmorrow ) )
         skip "no reason to check length if not valid DT object: $@" if ! ref( $dt ) eq 'DateTime';
         my $seconds_diff = $now->subtract_datetime_absolute( $dt )->seconds;
         is ( $dt->$method , $wanted , "$str => $wanted with ->$method ($dt)" );
-        cmp_ok( $seconds_diff , '>' , 60 * 60 * 24 * 28 , "we have subtracted at least 28 days ($str => $dt)" );
+        cmp_ok( $seconds_diff , '>' , 60 * 60 * 24 * 27 , "we have subtracted at least 27 days ($str => $dt)" );
 
     };
 }
