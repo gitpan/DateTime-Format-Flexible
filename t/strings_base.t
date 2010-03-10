@@ -75,7 +75,7 @@ t::lib::helper::run_tests(
 {
     my ( $str , $wanted ) = ( 'today at 4:00 PST' , '2005-06-07T04:00:00' );
     my $dt = $base->parse_datetime( $str , tz_map => { PST => 'America/Los_Angeles' } );
-    is ( $dt , $wanted , "$str => $wanted ($dt)" );
+    is ( $dt->datetime , $wanted , "$str => $wanted ($dt)" );
     is ( $dt->time_zone->name , 'America/Los_Angeles' , "timezone set ($str)" );
 }
 

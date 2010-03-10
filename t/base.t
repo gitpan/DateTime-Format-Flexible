@@ -18,12 +18,12 @@ my $base_dt = DateTime->new( year => 2009, month => 6, day => 22 );
         '23:59',
         base => $base_dt
     );
-    is( $dt, '2009-06-22T23:59:00' , 'base works with just a time' );
+    is( $dt->datetime, '2009-06-22T23:59:00' , 'base works with just a time' );
 }
 {
     my $dt = DateTime::Format::Flexible->parse_datetime(
         'now',
         base => $base_dt
     );
-    is( $dt, '2009-06-22T00:00:00', 'base works with a string' );
+    is( $dt->datetime, '2009-06-22T00:00:00', 'base works with a string' );
 }
