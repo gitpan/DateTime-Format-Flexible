@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 use base 'DateTime::Format::Builder';
 
@@ -76,12 +76,13 @@ use DateTime;
 use DateTime::TimeZone;
 use DateTime::Format::Builder 0.74;
 
-my $base_dt = DateTime->now;
+my $base_dt;
+
 sub base
 {
     my ( $self , $dt ) = @_;
     $base_dt = $dt if ( $dt );
-    return $base_dt;
+    return $base_dt || DateTime->now;
 }
 
 my $formats =

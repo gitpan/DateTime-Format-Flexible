@@ -3,13 +3,26 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
+use Test::MockTime ();
 
 use DateTime::Format::Flexible;
 my $base = 'DateTime::Format::Flexible';
 
 # my ( $base_dt ) = $base->parse_datetime( '2005-06-07T13:14:15' );
 # $base->base( $base_dt );
+
+
+{
+    my $dt  = DateTime::Format::Flexible->parse_datetime( 'now' );
+    Test::MockTime::set_relative_time( 120 );
+    my $dt2 = DateTime::Format::Flexible->parse_datetime( 'now' );
+
+    isnt( $dt->datetime, $dt2->datetime, 'parsing now is not always the same as module load' );
+
+    diag( $dt->datetime .' => '. $dt2->datetime );
+}
+
 
 my $base_dt = DateTime->new( year => 2009, month => 6, day => 22 );
 
