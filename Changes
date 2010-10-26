@@ -1,10 +1,20 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.17
+   - more formats supported
+   - support timezone offsets that are not at the end of the datetime string.
+     - they must be 4 digits and begin with a plus or minus
+     - thanks snarkyboojum: http://use.perl.org/~snarkyboojum/journal/40297
+   - better support for dates like 'December 1st'
+   - POD formatting fixes
+   - support 'Oct.26, 2010'. thanks Brian Knapp
+
 0.16 Thu Aug 25 2010
    - make sure 'now' means now and not when the module loaded unless user has set a base (thanks Ryan Voots rt #60731)
 
 0.15 Mon Mar 10 2010
-   - fix tests for DateTime string overloading problem (thanks Andreas Koenig and Michael Schwern)
+   - fix tests for DateTime string overloading problem
+     - (thanks Andreas Koenig and Michael Schwern)
 
 0.14 Sun Feb 28 2010
    - fix test: '1 month ago at 4pm' could be potentially less that 28 days ago.

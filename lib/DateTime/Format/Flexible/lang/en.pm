@@ -89,9 +89,9 @@ sub hours
 sub remove_strings
 {
     return (
-        qr{\sof\s}i,             # remove ' of ' as in '16th of November 2003'
-        qr{(?:st|nd|rd|th),?\s}, # remove number extensions
-        qr{next}i,               # next sunday
+        qr{\bof\b}i,             # remove ' of ' as in '16th of November 2003'
+        qr{(?:st|nd|rd|th)\b,?}, # remove number extensions
+        qr{\bnext\b}i,           # next sunday
     );
 }
 
@@ -234,10 +234,10 @@ maps unofficial timezones to official timezones for this language (CST => Americ
 
 =head1 COPYRIGHT & LICENSE
 
-    Copyright 2010 Tom Heady.
+Copyright 2010 Tom Heady.
 
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of either:
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
 
 =over 4
 

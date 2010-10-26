@@ -12,6 +12,7 @@ my $base = 'DateTime::Format::Flexible';
 # my ( $base_dt ) = $base->parse_datetime( '2005-06-07T13:14:15' );
 # $base->base( $base_dt );
 
+my $base_dt = DateTime->new( year => 2009, month => 6, day => 22 );
 
 {
     my $dt  = DateTime::Format::Flexible->parse_datetime( 'now' );
@@ -19,12 +20,7 @@ my $base = 'DateTime::Format::Flexible';
     my $dt2 = DateTime::Format::Flexible->parse_datetime( 'now' );
 
     isnt( $dt->datetime, $dt2->datetime, 'parsing now is not always the same as module load' );
-
-    diag( $dt->datetime .' => '. $dt2->datetime );
 }
-
-
-my $base_dt = DateTime->new( year => 2009, month => 6, day => 22 );
 
 {
     my $dt = DateTime::Format::Flexible->parse_datetime(

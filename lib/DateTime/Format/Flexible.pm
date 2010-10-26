@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use base 'DateTime::Format::Builder';
 
@@ -25,14 +25,18 @@ my $AMPM = qr{(a\.?m?|p\.?m?)\.?}i;
 my $MMDDYYYY = qr{(\d{1,2})$DELIM(\d{1,2})$DELIM(\d{1,4})};
 my $YYYYMMDD = qr{(\d{4})$DELIM(\d{1,2})$DELIM(\d{1,2})};
 my $MMDD = qr{(\d{1,2})$DELIM(\d{1,2})};
-my $XMMXDD = qr{X(\d{1,2})X$DELIM(\d{1,2})};
-my $DDXMMX = qr{(\d{1,2})${DELIM}X(\d{1,2})X};
+my $XMMXDD = qr{X(\d{1,2})X${DELIM}?(\d{1,2})};
+my $DDXMMX = qr{(\d{1,2})${DELIM}?X(\d{1,2})X};
 my $DDXMMXYYYY = qr{(\d{1,2})${DELIM}X(\d{1,2})X$DELIM(\d{1,4})};
 my $MMYYYY = qr{(\d{1,2})$DELIM(\d{4})};
 my $XMMXYYYY = qr{X(\d{1,2})X${DELIM}(\d{4})};
-my $XMMXDDYYYY = qr{X(\d{1,2})X${DELIM}(\d{1,2})$DELIM(\d{1,4})};
+my $XMMXDDYYYY = qr{X(\d{1,2})X${DELIM}?(\d{1,2})${DELIM}?(\d{1,4})};
 
+my $HMSMD = [ qw( hour minute second month day ) ];
+my $HMSMDY = [ qw( hour minute second month day year ) ];
+my $HMSDM = [ qw( hour minute second day month ) ];
 my $HMMDY = [ qw( hour minute month day year ) ];
+my $HMMD = [ qw( hour minute month day ) ];
 my $HMAPMMDD = [ qw( hour minute ampm month day ) ];
 my $DM = [ qw( day month ) ];
 my $DMY = [ qw( day month year ) ];
@@ -77,7 +81,6 @@ use DateTime::TimeZone;
 use DateTime::Format::Builder 0.74;
 
 my $base_dt;
-
 sub base
 {
     my ( $self , $dt ) = @_;
@@ -100,7 +103,7 @@ my $formats =
  # M/D/YYYY, M/DD/YYYY, MM/D/YYYY, MM/DD/YYYY
 
  { length => [5..10],  params => $MDY,      regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\z},               postprocess => \&_fix_year },
-# { length => [14],     params => $MDYHMS,   regex => qr{\A${MON}${DAY}${YEAR}\s$HMS\z},                         postprocess => \&_fix_year },
+ { length => [12..14], params => $MDY,      regex => qr{\AX${MON}X${DELIM}n${DAY}n${DELIM}${YEAR}\z} },
  { length => [11..19], params => $MDYHMS,   regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HMS\z},         postprocess => \&_fix_year },
  { length => [11..20], params => $MDYHMAP,  regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HM\s?$AMPM\z},  postprocess => [ \&_fix_ampm , \&_fix_year ] } ,
  { length => [14..22], params => $MDYHMSAP, regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HMS\s?$AMPM\z}, postprocess => [ \&_fix_ampm , \&_fix_year ] } ,
@@ -171,6 +174,7 @@ my $formats =
  { length => [15],     params => $YMDHAP,   regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HOUR}T\s?${AMPM}\z}, postprocess => \&_fix_ampm } ,
  { length => [16..18], params => $YMDHM,    regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HM}T\z},             postprocess => \&_fix_year } ,
  { length => [21],     params => $YMDHMS,   regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HMS}T\z},            postprocess => \&_fix_year } ,
+ { length => [16],     params => $MDYHMS,   regex => qr{\A${MON}${DAY}(\d\d)\s?T${HMS}T\z},                             postprocess => \&_fix_year } ,
  { length => [16],     params => $YMDHAP,   regex => qr{\A${YEAR}${DELIM}${MON}${DELIM}${DAY}\s?T${HOUR}T${AMPM}\z},    postprocess => \&_fix_ampm } ,
 
  { length => [15,16],  params => $MDHMS,    regex => qr{\A${MON}${DELIM}${DAY}\s?T${HMS}T\z},
@@ -179,7 +183,6 @@ my $formats =
    postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } } ,
 
  ########################################################
- ##### Month/Day
  # YYYY HH:MM:SS
  { length => [13], params => $YHMS , regex => qr{\A$YEAR\s$HMS\z} } ,
 
@@ -203,6 +206,10 @@ my $formats =
  { length => [12..21], params => $DMYHMS,   regex => qr{\A${DDXMMXYYYY}\s${HMS}\z},         postprocess => \&_fix_year },
  { length => [16..25], params => $DMYHMSNS, regex => qr{\A${DDXMMXYYYY}\s${HMSNS}\z},       postprocess => \&_fix_year },
  { length => [14..24], params => $DMYHMSAP, regex => qr{\A${DDXMMXYYYY}\s${HMS}\s?$AMPM\z}, postprocess => [ \&_fix_year , \&_fix_ampm ] },
+ { length => [9..15] , params => $HMSMD,    regex => qr{\A${HMS}${XMMXDD}\z},               postprocess => \&_set_default_year },
+ { length => [9..15] , params => $HMSDM,    regex => qr{\A${HMS}${DELIM}?${DDXMMX}\z},      postprocess => \&_set_default_year },
+ { length => [11..17], params => $HMSMDY,   regex => qr{\A${HMS}${XMMXDDYYYY}\z},           postprocess => \&_fix_year },
+ { length => [6..11],  params => $HMMD,     regex => qr{\A${HM}${XMMXDD}\z},                postprocess => \&_set_default_year },
 
  # mon
  { length => [3,4], params => $M, regex => qr{\AX${MON}X\z},
@@ -215,7 +222,7 @@ my $formats =
  { length => [16..21], params => $MYHMSAP,  regex => qr{\A${XMMXYYYY}\s${HMS}\s?$AMPM\z}, postprocess => \&_fix_ampm },
 
  { length => [5..7], params => $MD, regex => qr{\A$XMMXDD\z},
-   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+   postprocess => sub { my %args = @_; _set_year( @_ ) } },
  { length => [10..18], params => $MDHMS, regex => qr{\A$XMMXDD\s$HMS\z},
    postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
  { length => [12..21], params => $MDHMSAP, regex => qr{\A$XMMXDD\s$HMS\s?$AMPM\z} ,
@@ -440,9 +447,10 @@ sub _fix_alpha
 
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
-    # remove any leading delimeters
+    # remove any leading delimeters unless it is -infinity
     $date =~ s{\A$DELIM+}{}mx if ( not $date eq '-infinity' );
     $date =~ s{$DELIM+\z}{}mx;      # remove any trailing delimeters
+    $date =~ s{\,+}{}gmx;           # remove commas
 
     # if we have two digits at the beginning of our date that are greater than 31,
     # we have a possible two digit year
@@ -516,6 +524,16 @@ sub _parse_timezone
         return ( $date , $p );
     }
 
+    # search for positive/negative 4 digit timezones that are inside the string
+    # must be surrounded by spaces
+    # Mon Apr 05 17:25:35 +0000 2010
+    if ( my ( $tz ) = $date =~ m{\s([\+\-]\d{4})\s}mx )
+    {
+        $date =~ s{\Q$tz\E}{};
+        $p->{time_zone} = $tz;
+        return ( $date , $p );
+    }
+
     return ( $date , $p );
 }
 
@@ -570,6 +588,33 @@ sub _fix_ampm
         }
         return 1;
     }
+    return 1;
+}
+
+sub _set_default_year
+{
+    my %args = @_;
+    $args{parsed}{year} = __PACKAGE__->base->year;
+    return 1;
+}
+
+sub _set_year
+{
+    my %args = @_;
+    my %constructor_args = $args{args} ? @{$args{args}} : ();
+    return 1 if defined $args{parsed}{year}; # year is already set
+
+    if ( $constructor_args{prefer_future} )
+    {
+        if ( $args{parsed}{month} < __PACKAGE__->base->month or
+             ( $args{parsed}{month} eq __PACKAGE__->base->month and
+               $args{parsed}{day} < __PACKAGE__->base->day ) )
+        {
+            $args{parsed}{year} = __PACKAGE__->base->clone->add( years => 1 )->year;
+            return 1;
+        }
+    }
+    $args{parsed}{year} = __PACKAGE__->base->year;
     return 1;
 }
 

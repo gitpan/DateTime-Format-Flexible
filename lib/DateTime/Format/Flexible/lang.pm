@@ -27,7 +27,7 @@ sub _cleanup
                 next;
             }
         }
-        printf( "# not skipping %s\n", $plug ) if $ENV{DFF_DEBUG};
+#        printf( "# not skipping %s\n", $plug ) if $ENV{DFF_DEBUG};
 
         $date = $self->_do_math( $plug , $date );
         $date = $self->_string_dates( $plug , $date );
@@ -122,6 +122,13 @@ sub _fix_alpha_month
         {
             $p->{ month } = $month_number;
             $date =~ s{\b$month_name\b}{X${month_number}X}mxi;
+
+            return ( $date , $p );
+        }
+        elsif ( $date =~ m{\d$month_name}mxi )
+        {
+            $p->{ month } = $month_number;
+            $date =~ s{(\d)$month_name}{$1X${month_number}X}mxi;
 
             return ( $date , $p );
         }
@@ -237,10 +244,10 @@ Instantiate a new instance of this module.
 
 =head1 COPYRIGHT & LICENSE
 
-    Copyright 2010 Tom Heady.
+Copyright 2010 Tom Heady.
 
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of either:
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
 
 =over 4
 

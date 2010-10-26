@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 24;
+use Test::More tests => 33;
 use DateTime;
 
 use t::lib::helper;
@@ -36,4 +36,14 @@ t::lib::helper::run_tests(
     "December/10 => $curr_year-12-10T00:00:00",
     "12/10 at 05:30:25 => $curr_year-12-10T05:30:25",
     "12/10 at 05:30:25 GMT => $curr_year-12-10T05:30:25 => UTC",
+
+    "4:50:40DeC10 => $curr_year-12-10T04:50:40",
+    "4:50:42DeCember10 => $curr_year-12-10T04:50:42",
+    "4:50:5110DeC => $curr_year-12-10T04:50:51",
+    "4:50:5210DeCember => $curr_year-12-10T04:50:52",
+    "4:50:53 10DeC => $curr_year-12-10T04:50:53",
+    "4:50:5410DeCember => $curr_year-12-10T04:50:54",
+    "4:50:54DeCember10 => $curr_year-12-10T04:50:54",
+    "4:50DeC10 => $curr_year-12-10T04:50:00",
+    "4:50DeCember10 => $curr_year-12-10T04:50:00",
 );

@@ -97,7 +97,7 @@ sub hours
 sub remove_strings
 {
     return (
-        qr{\sde\s}i, # remove ' de ' as in '29 de febrero de 1996'
+        qr{\bde\b}i, # remove ' de ' as in '29 de febrero de 1996'
     );
 }
 
@@ -226,10 +226,10 @@ maps unofficial timezones to official timezones for this language (PDT  => Ameri
 
 =head1 COPYRIGHT & LICENSE
 
-    Copyright 2010 Tom Heady.
+Copyright 2010 Tom Heady.
 
-    This program is free software; you can redistribute it and/or
-    modify it under the terms of either:
+This program is free software; you can redistribute it and/or
+modify it under the terms of either:
 
 =over 4
 
