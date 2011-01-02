@@ -1,6 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
-0.17
+0.18 Sat Jan 01 2010
+   - move a test that was hardcoded to a year to the no_year tests. (thanks cpantesters)
+
+0.17 Tue Oct 26 2010
    - more formats supported
    - support timezone offsets that are not at the end of the datetime string.
      - they must be 4 digits and begin with a plus or minus
