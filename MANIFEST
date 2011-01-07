@@ -8,6 +8,7 @@ TODO
 example/parse_date.pl
 lib/DateTime/Format/Flexible.pm
 lib/DateTime/Format/Flexible/lang.pm
+lib/DateTime/Format/Flexible/lang/de.pm
 lib/DateTime/Format/Flexible/lang/en.pm
 lib/DateTime/Format/Flexible/lang/es.pm
 t/001_load.t
@@ -18,6 +19,7 @@ t/base.t
 t/data/tests.txt
 t/data/timezones.txt
 t/ddmmyyyy.t
+t/lang-de.t
 t/lang-es.t
 t/lib/helper.pm
 t/nanoseconds.t

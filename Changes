@@ -1,6 +1,12 @@
 Revision history for Perl module DateTime::Format::Flexible
 
-0.18 Sat Jan 01 2010
+0.19 Fri Jan 07 2011
+   - support for German (de)
+     - thanks Mark Trettin
+   - better support for DD MM
+   - support for natural dates in all languages (3 years ago)
+
+0.18 Sat Jan 01 2011
    - move a test that was hardcoded to a year to the no_year tests. (thanks cpantesters)
 
 0.17 Tue Oct 26 2010

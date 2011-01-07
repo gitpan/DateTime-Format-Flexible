@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 15;
 use DateTime;
 
 use t::lib::helper;
@@ -47,4 +47,11 @@ t::lib::helper::run_tests(
 {
     my $dt = DateTime::Format::Flexible->parse_datetime( 'infinito' );
     ok ( $dt->is_infinite() , "infinito is infinite" );
+}
+
+{
+    my ( $base_dt ) = DateTime::Format::Flexible->parse_datetime( '2005-06-07T13:14:15' );
+    DateTime::Format::Flexible->base( $base_dt );
+    my $dt = DateTime::Format::Flexible->parse_datetime( 'Hace 3 años' );
+    is( $dt->datetime, '2002-06-07T13:14:15', 'Hace 3 años => 3 years ago' );
 }

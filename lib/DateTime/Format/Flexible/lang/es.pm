@@ -37,13 +37,13 @@ sub days
 {
     # http://www.tarver-genealogy.net/aids/spanish/sp_dates_num.html#days
     return (
-        qr{lunes}     => 1, # Monday
-        qr{martes}    => 2, # Tuesday
-        qr{miércoles} => 3, # Wednesday
-        qr{jueves}    => 4, # Thursday
-        qr{viernes}   => 5, # Friday
-        qr{sábado}    => 6, # Saturday
-        qr{domingo}   => 7, # Sunday
+        qr{\blunes\b}     => 1, # Monday
+        qr{\bmartes\b}    => 2, # Tuesday
+        qr{\bmiércoles\b} => 3, # Wednesday
+        qr{\bjueves\b}    => 4, # Thursday
+        qr{\bviernes\b}   => 5, # Friday
+        qr{\bsábado\b}    => 6, # Saturday
+        qr{\bdomingo\b}   => 7, # Sunday
     );
 }
 
@@ -122,11 +122,17 @@ sub string_dates
     );
 }
 
+sub ago
+{
+    return qr{\bhace\b}i; # as in 3 years ago
+}
+
 sub math_strings
 {
     return (
         ano     => 'years' ,
         anos    => 'years' ,
+        'años'  => 'years' ,
         mes     => 'months' ,
         meses   => 'months' ,
         dia     => 'days' ,
@@ -208,6 +214,10 @@ currently does nothing
 
 maps string names to real dates (ahora => DateTime->now)
 
+=head2 ago
+
+the word use to denote a date in the past (Hace 3 años => 3 years ago)
+
 =head2 math_strings
 
 useful strings when doing datetime math
@@ -226,7 +236,7 @@ maps unofficial timezones to official timezones for this language (PDT  => Ameri
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2010 Tom Heady.
+Copyright 2011 Tom Heady.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

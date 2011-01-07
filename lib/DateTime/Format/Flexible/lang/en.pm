@@ -31,13 +31,13 @@ sub months
 sub days
 {
     return (
-        qr{Mon(?:day)?}i    => 1,
-        qr{Tue(?:sday)?}i   => 2,
-        qr{Wed(?:nesday)?}i => 3,
-        qr{Thu(?:rsday)?}i  => 4,
-        qr{Fri(?:day)?}i    => 5,
-        qr{Sat(?:urday)?}i  => 6,
-        qr{Sun(?:day)?}i    => 7,
+        qr{\bMon(?:day)?\b}i    => 1,
+        qr{\bTue(?:sday)?\b}i   => 2,
+        qr{\bWed(?:nesday)?\b}i => 3,
+        qr{\bThu(?:rsday)?\b}i  => 4,
+        qr{\bFri(?:day)?\b}i    => 5,
+        qr{\bSat(?:urday)?\b}i  => 6,
+        qr{\bSun(?:day)?\b}i    => 7,
     );
 }
 
@@ -122,6 +122,11 @@ sub string_dates
         '-infinity' => sub { '-infinity' },
         infinity    => sub { 'infinity'  },
     );
+}
+
+sub ago
+{
+    return qr{\bago\b}; # as in 3 years ago
 }
 
 sub math_strings
@@ -215,6 +220,10 @@ searches for the string 'at' to help determine a time substring (sunday at 3:00)
 
 maps string names to real dates (now => DateTime->now)
 
+=head2 ago
+
+the word used to denote a date in the past (3 years ago)
+
 =head2 math_strings
 
 useful strings when doing datetime math
@@ -234,7 +243,7 @@ maps unofficial timezones to official timezones for this language (CST => Americ
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2010 Tom Heady.
+Copyright 2011 Tom Heady.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

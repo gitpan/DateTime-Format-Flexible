@@ -27,16 +27,25 @@ sub _cleanup
                 next;
             }
         }
-#        printf( "# not skipping %s\n", $plug ) if $ENV{DFF_DEBUG};
+        printf( "# not skipping %s\n", $plug ) if $ENV{DFF_DEBUG};
 
+        printf( "#   before math: %s\n", $date ) if $ENV{DFF_DEBUG};;
         $date = $self->_do_math( $plug , $date );
+        printf( "#   before string_dates: %s\n", $date ) if $ENV{DFF_DEBUG};;
         $date = $self->_string_dates( $plug , $date );
+        printf( "#   before fix_alpha_month: %s\n", $date ) if $ENV{DFF_DEBUG};;
         ( $date , $p ) = $self->_fix_alpha_month( $plug , $date , $p );
+        printf( "#   before remove_day_names: %s\n", $date ) if $ENV{DFF_DEBUG};;
         $date = $self->_remove_day_names( $plug , $date );
+        printf( "#   before fix_hours: %s\n", $date ) if $ENV{DFF_DEBUG};;
         $date = $self->_fix_hours( $plug , $date );
+        printf( "#   before remove_strings: %s\n", $date ) if $ENV{DFF_DEBUG};;
         $date = $self->_remove_strings( $plug , $date );
+        printf( "#   before locate_time: %s\n", $date ) if $ENV{DFF_DEBUG};;
         $date = $self->_locate_time( $plug , $date );
+        printf( "#   before fix_internal_tz: %s\n", $date ) if $ENV{DFF_DEBUG};;
         ( $date , $p ) = $self->_fix_internal_tz( $plug , $date , $p );
+        printf( "#   finished: %s\n", $date ) if $ENV{DFF_DEBUG};;
     }
     return ( $date , $p );
 }
@@ -61,15 +70,23 @@ sub _do_math
 {
     my ( $self , $plug , $date ) = @_;
     my %strings = $plug->math_strings;
-    if ( $date =~ m{ago}mx )
+    my $ago = $plug->ago;
+
+    if ( $date =~ m{$ago}mix )
     {
         my $base_dt = DateTime::Format::Flexible->base->clone;
         if ( my ( $amount , $unit ) = $date =~ m{(\d+)\s+([^\s]+)}mx )
         {
+
+            printf( "#    %s => %s\n", $amount, $unit ) if $ENV{DFF_DEBUG};
             if ( exists( $strings{$unit} ) )
             {
+                printf( "#    found: %s\n", $strings{$unit} ) if $ENV{DFF_DEBUG};
                 my $ret = $base_dt->subtract( $strings{$unit} => $amount );
-                $date =~ s{$amount\s+$unit\s+ago}{}mx;
+                $date =~ s{\s{0,}$amount\s+$unit\s{0,}}{}mx;
+                printf( "#    after removing amount,unit: [%s]\n", $date ) if $ENV{DFF_DEBUG};
+                $date =~ s{$ago}{}mx;
+                printf( "#    after removing ago: [%s]\n", $date ) if $ENV{DFF_DEBUG};
                 if ( $date ) # we still have more to parse...
                 {
                     $date = $ret->ymd . ' ' . $date;
@@ -205,6 +222,8 @@ sub _remove_strings
     {
         if ( $date =~ m{$rs}mxi )
         {
+            printf( "#     removing string: %s\n", $rs ) if $ENV{DFF_DEBUG};
+
             $date =~ s{$rs}{ }gmix;
         }
     }
@@ -244,7 +263,7 @@ Instantiate a new instance of this module.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2010 Tom Heady.
+Copyright 2011 Tom Heady.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:

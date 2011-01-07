@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.18';
+our $VERSION = '0.19';
 
 use base 'DateTime::Format::Builder';
 
@@ -247,9 +247,11 @@ my $formats =
 
  # D month, Y | D month, YY | D month, YYYY | DD month, Y | DD month, YY
  # DD month, YYYY
+ # nDDn XMMX
  { length => [8..13],  params => $DMY,      regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\z} },
  { length => [13..21], params => $DMYHMS,   regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\s$HMS\z} },
- { length => [16..27], params => $DMYHMSAP, regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\s$HMS\s?$AMPM\z} , postprocess => \&_fix_ampm },
+ { length => [16..27], params => $DMYHMSAP, regex => qr{\A(\d{1,2})\sX(\d{1,2})X,?\s(\d{1,4})\s$HMS\s?$AMPM\z}, postprocess => \&_fix_ampm },
+ { length => [7..9],   params => $DM,       regex => qr{\An(\d{1,2})n\sX(\d{1,2})X\z},                          postprocess => \&_set_default_year },
 
  # Dec 03 20:53:10 2009
  { length => [16..21], params => $MDHMSY , regex => qr{\AX(\d{1,2})X\s(\d{1,2})\s$HMS\s(\d{4})\z} } ,
@@ -443,7 +445,10 @@ sub _fix_alpha
         lang => $extra_args{lang},
         base => __PACKAGE__->base,
     );
+
+    printf( "# before lang: %s\n", $date ) if $ENV{DFF_DEBUG};
     ( $date , $p ) = $lang->_cleanup( $date , $p );
+    printf( "# after lang: %s\n", $date ) if $ENV{DFF_DEBUG};
 
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
@@ -471,7 +476,7 @@ sub _fix_alpha
         }
     }
 
-    printf( "#-->%s (%s) [%s] \n" , $date , length( $date ) , $p->{time_zone}||q{none} ) if $ENV{DFF_DEBUG};
+    printf( "#-->%s<-- (%s) [%s] \n" , $date , length( $date ) , $p->{time_zone}||q{none} ) if $ENV{DFF_DEBUG};
     return $date;
 }
 
@@ -896,7 +901,7 @@ Tom Heady <cpan@punch.net>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2007-2010 Tom Heady.
+Copyright 2007-2011 Tom Heady.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
