@@ -89,9 +89,9 @@ sub hours
 sub remove_strings
 {
     return (
-        qr{\bof\b}i,             # remove ' of ' as in '16th of November 2003'
-        qr{(?:st|nd|rd|th)\b,?}, # remove number extensions
-        qr{\bnext\b}i,           # next sunday
+        qr{\bof\b}i,              # remove ' of ' as in '16th of November 2003'
+        qr{(?:st|nd|rd|th)\b,?}i, # remove number extensions
+        qr{\bnext\b}i,            # next sunday
     );
 }
 

@@ -1,5 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.20 Sun Sep 18 2011
+   - case insensitive handling of st|nd|rd|th (3rd and 3RD now work)
+     - thanks Brett Carson
+
 0.19 Fri Jan 07 2011
    - support for German (de)
      - thanks Mark Trettin
@@ -7,7 +11,8 @@ Revision history for Perl module DateTime::Format::Flexible
    - support for natural dates in all languages (3 years ago)
 
 0.18 Sat Jan 01 2011
-   - move a test that was hardcoded to a year to the no_year tests. (thanks cpantesters)
+   - move a test that was hardcoded to a year to the no_year tests.
+     - thanks cpantesters
 
 0.17 Tue Oct 26 2010
    - more formats supported
@@ -16,14 +21,16 @@ Revision history for Perl module DateTime::Format::Flexible
      - thanks snarkyboojum: http://use.perl.org/~snarkyboojum/journal/40297
    - better support for dates like 'December 1st'
    - POD formatting fixes
-   - support 'Oct.26, 2010'. thanks Brian Knapp
+   - support 'Oct.26, 2010'.
+     - thanks Brian Knapp
 
 0.16 Thu Aug 25 2010
-   - make sure 'now' means now and not when the module loaded unless user has set a base (thanks Ryan Voots rt #60731)
+   - make sure 'now' means now and not when the module loaded unless user has set a base
+     - thanks Ryan Voots rt #60731
 
 0.15 Mon Mar 10 2010
    - fix tests for DateTime string overloading problem
-     - (thanks Andreas Koenig and Michael Schwern)
+     - thanks Andreas Koenig and Michael Schwern
 
 0.14 Sun Feb 28 2010
    - fix test: '1 month ago at 4pm' could be potentially less that 28 days ago.
@@ -44,12 +51,14 @@ Revision history for Perl module DateTime::Format::Flexible
 
 0.10 Wed Feb 24 18:45:00 2009
    - support for single character am/pm strings '3p'
-   - support for days of the week (wednesday => the nearest future wednesday) (thanks Shawn Moore, rt #53188)
+   - support for days of the week (wednesday => the nearest future wednesday)
+     - thanks Shawn Moore, rt #53188
      - note: this is quite limited, I need more test cases
        - works: wednesday
        - works: wed at 3p
    - support for bare months (february)
-   - support for limited timezones that are not at the end of the string (thanks Dave Faraldo)
+   - support for limited timezones that are not at the end of the string
+     - thanks Dave Faraldo
      - 'Wed Nov 11 13:55:48 PST 2009' becomes
        - 2009-11-11T13:55:48 America/Los_Angeles
    - beginning multiple language support (contributions welcome)
@@ -69,7 +78,8 @@ Revision history for Perl module DateTime::Format::Flexible
 
 0.09 Sun May 24 22:00:00 2009
    - add a real copyright for Debian packaging
-   - fix parsing a bare 4 digit year. (thanks Dominic Rose, rt #46278)
+   - fix parsing a bare 4 digit year.
+     - thanks Dominic Rose, rt #46278
 
 0.08 Wed Apr 22 14:00:00 2009
     - fix some pod errors, give an example for european hinting
@@ -81,23 +91,25 @@ Revision history for Perl module DateTime::Format::Flexible
     - can now parse epoch times
 
 0.06 Mon Apr 20 15:06:00 2009
-    - Fix parsing bug with dd-(oct|nov|dec)-yyyy (thanks Phil Brass)
+    - Fix parsing bug with dd-(oct|nov|dec)-yyyy
+      - thanks Phil Brass
 
 0.05 Fri Apr 4 14:00:00 2008
-    - fix some test helper libraries not being included.  thanks GOOZBACH (http://rt.cpan.org/Public/Bug/Display.html?id=34683)
+    - fix some test helper libraries not being included.
+      - thanks GOOZBACH, rt #34683
 
 0.04 Fri Mar 14 21:00:00 2008
     - fix broken 0.03 release
     - split tests out for easier integration into other distributions
 
 0.03 Mon Mar 10 02:00:00 2008
-   - add method "parse_datetime" as an alias for "build".  thanks Adriano Rodrigues Ferreira
+   - add method "parse_datetime" as an alias for "build".
+     - thanks Adriano Rodrigues Ferreira
 
 0.02 Tue Oct 02 01:50:00 2007
    - fixed pod formatting
-   - added new parseable format: 2007-10-01 13:11:32.741804. thanks RKRIMEN
+   - added new parseable format: 2007-10-01 13:11:32.741804.
+     - thanks RKRIMEN
 
 0.01 Sun Jul 15 20:09:47 2007
     - original version; created by ExtUtils::ModuleMaker 0.49
-
-
