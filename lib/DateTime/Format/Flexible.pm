@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 use base 'DateTime::Format::Builder';
 
@@ -150,6 +150,11 @@ my $formats =
  { length => 19 , params => $YMDHMSAP ,
    regex => qr{\A(\d{4})(\d{2})(\d{2})${HMS}\s${AMPM}\z} ,
    postprocess => \&_fix_ampm },
+
+ ########################################################
+ ##### Month/Year (year must be 4 digits
+ # M/YYYY, MM/YYYY
+ { length => [6,7], params => $MY, regex  => qr{\A$MMYYYY\z}, postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
 
  ########################################################
  ##### Month/Day

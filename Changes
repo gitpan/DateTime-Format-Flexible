@@ -1,5 +1,8 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.21 Sun Jan 01 2012
+   - handle mm/yyyy and m/yyyy
+
 0.20 Sun Sep 18 2011
    - case insensitive handling of st|nd|rd|th (3rd and 3RD now work)
      - thanks Brett Carson
