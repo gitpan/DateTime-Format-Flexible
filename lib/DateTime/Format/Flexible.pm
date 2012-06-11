@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 use base 'DateTime::Format::Builder';
 
@@ -34,10 +34,12 @@ my $XMMXDDYYYY = qr{X(\d{1,2})X${DELIM}?(\d{1,2})${DELIM}?(\d{1,4})};
 
 my $HMSMD = [ qw( hour minute second month day ) ];
 my $HMSMDY = [ qw( hour minute second month day year ) ];
+my $HMSNSMDY = [ qw( hour minute second nanosecond month day year ) ];
 my $HMSDM = [ qw( hour minute second day month ) ];
 my $HMMDY = [ qw( hour minute month day year ) ];
 my $HMMD = [ qw( hour minute month day ) ];
 my $HMAPMMDD = [ qw( hour minute ampm month day ) ];
+my $HMAPMMDDYYYY = [ qw( hour minute ampm month day year ) ];
 my $DM = [ qw( day month ) ];
 my $DMY = [ qw( day month year ) ];
 my $DMHM = [ qw( day month hour minute ) ];
@@ -189,7 +191,21 @@ my $formats =
 
  ########################################################
  # YYYY HH:MM:SS
- { length => [13], params => $YHMS , regex => qr{\A$YEAR\s$HMS\z} } ,
+ { length => [13], params => $YHMS, regex => qr{\A$YEAR\s$HMS\z} } ,
+
+ ########################################################
+ # time first
+ # (5:30 12-10)
+ { length => [8..11], params => $HMMD, regex => qr{\A${HM}\s${MMDD}\z}, postprocess => \&_set_default_year },
+ # 5:30:25:05/1/1/65
+ # 12:30:25:05/10/10/65
+ { length => [17..20], params => $HMSNSMDY, regex => qr{\A${HMSNS}${DELIM}${MMDDYYYY}\z}, postprocess => \&_fix_year },
+ # 5:30:25 12101965
+ { length => [14..16], params => $HMSMDY, regex => qr{\A${HMS}${DELIM}${MON}${DAY}${YEAR}\z}, postprocess => \&_fix_year },
+ { length => [14..19], params => $HMSMDY, regex => qr{\A${HMS}${DELIM}${MMDDYYYY}\z}, postprocess => \&_fix_year },
+ # 5:30 pm 121065 => 2065-12-01T17:30:00
+ { length => [14,18], params => $HMAPMMDDYYYY, regex => qr{\A${HM}\s${AMPM}\s${MON}${DAY}${YEAR}},postprocess => [\&_fix_ampm, \&_fix_year] },
+ { length => [16,19], params => $HMAPMMDDYYYY, regex => qr{\A${HM}\s${AMPM}\s${MMDDYYYY}},postprocess => [\&_fix_ampm, \&_fix_year] },
 
  ########################################################
  ##### Alpha months
@@ -261,9 +277,11 @@ my $formats =
  # Dec 03 20:53:10 2009
  { length => [16..21], params => $MDHMSY , regex => qr{\AX(\d{1,2})X\s(\d{1,2})\s$HMS\s(\d{4})\z} } ,
  { length => [10..18], params => $HMMDY  , regex => qr{\A$HM\sX${MON}X\s$DAY\s$YEAR\z} },
- # 8:00 px Dec 10th => 8:00pm X12X n10n
+ # 8:00 pm Dec 10th => 8:00pm X12X n10n
  { length => [14..19]    , params => $HMAPMMDD , regex => qr{\A$HM\s?$AMPM\sX${MON}X\sn${DAY}n\z} ,
    postprocess => [sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year }, \&_fix_ampm] },
+ # 5:30 DeC 1
+ { length => [11], params => $HMMD, regex => qr{\A${HM}\sX${MON}X\s${DAY}\z}m, postprocess => \&_set_default_year },
 
  ########################################################
  ##### Bare Numbers
@@ -451,10 +469,19 @@ sub _fix_alpha
         base => __PACKAGE__->base,
     );
 
-    printf( "# before lang: %s\n", $date ) if $ENV{DFF_DEBUG};
-    ( $date , $p ) = $lang->_cleanup( $date , $p );
-    printf( "# after lang: %s\n", $date ) if $ENV{DFF_DEBUG};
+    my $stripped = $date;
+    $stripped =~ s{$DELIM|$HMSDELIM}{}gm;
 
+    if ( $stripped =~ m{(\D)} )
+    {
+        printf( "# before lang: %s\n", $date ) if $ENV{DFF_DEBUG};
+        ( $date , $p ) = $lang->_cleanup( $date , $p );
+        printf( "# after lang: %s\n", $date ) if $ENV{DFF_DEBUG};
+    }
+    else
+    {
+        printf( "# ignoring languages, no non numbers (%s)\n", $stripped ) if $ENV{DFF_DEBUG};
+    }
 
     $date =~ s{($DELIM)+}{$1}mxg;   # make multiple delimeters into one
     # remove any leading delimeters unless it is -infinity
@@ -497,6 +524,16 @@ sub _parse_timezone
             $p->{time_zone} = $tz;
             return ( $date , $p );
         }
+    }
+
+    # search for GMT inside the string
+    # must be surrounded by spaces
+    # 5:30 pm GMT 121065
+    if ( my ( $tz ) = $date =~ m{\s(GMT)\s}mx )
+    {
+        $date =~ s{\Q$tz\E}{};
+        $p->{time_zone} = 'UTC';
+        return ( $date , $p );
     }
 
     # remove any trailing 'Z' => UTC
@@ -672,6 +709,8 @@ sub _pick_year
 
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 DateTime::Format::Flexible - DateTime::Format::Flexible - Flexibly parse strings and turn them into DateTime objects.
@@ -767,7 +806,9 @@ When DateTime::Format::Flexible parses a date with a string in it, it will
 search for a way to convert that string to a number.  By default it will
 search through all the language plugins to search for a match.
 
-Setting this lets you limit the scope of the search
+NOTE: as of 0.22, it will only do this search if it detects a string in the given date.
+
+Setting this lets you limit the scope of the search.
 
 example:
 
@@ -777,10 +818,10 @@ example:
  );
  # $dt is now 2009-06-10T00:00:00
 
-Currently supported languages are english (en) and spanish (es).
+Currently supported languages are english (en), spanish (es) and german (de).
 Contributions, corrections, requests and examples are VERY welcome.
-See the F<DateTime::Format::Flexible::lang::en> and
-F<DateTime::Dormat::Flexible::lang::es> for examples of the plugins.
+See the F<DateTime::Format::Flexible::lang::en>,
+F<DateTime::Format::Flexible::lang::es>, and F<DateTime::Format::Flexible::lang::de> for examples of the plugins.
 
 =item * C<european> (optional)
 
@@ -917,7 +958,7 @@ modify it under the terms of either:
     Software Foundation; either version 1, or (at your option) any
     later version, or
 
-=item * the Artistic License version 2.0.
+=item * the Artistic License.
 
 =back
 

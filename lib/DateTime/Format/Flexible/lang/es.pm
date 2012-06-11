@@ -162,6 +162,8 @@ sub timezone_map
 1;
 __END__
 
+=encoding utf-8
+
 =head1 NAME
 
 DateTime::Format::Flexible::lang::es - spanish language plugin
@@ -247,7 +249,7 @@ modify it under the terms of either:
     Software Foundation; either version 1, or (at your option) any
     later version, or
 
-=item * the Artistic License version 2.0.
+=item * the Artistic License.
 
 =back
 
