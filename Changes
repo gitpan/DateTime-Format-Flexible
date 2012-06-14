@@ -1,5 +1,11 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.23 Thu Jun 14 2012
+   - Fix for MM/YYYY (was always setting the base year)
+     - thanks John Marling
+   - Support MM/YY if MMYY is given as an option
+   - pod cleanup
+
 0.22 Mon Jun 11 2012
    - update GPL in the LICENSE file (apparently the FSF has a new address)
      - thanks ppisar rt #74363
@@ -7,7 +13,7 @@ Revision history for Perl module DateTime::Format::Flexible
      - thanks ppisar rt #74358
    - fix typo for saturday in the german language file
      - thanks TMUELLER rt #77721
-   - don't check the language extensions if we done have any non-digits in the string we are checking (excluding delimiters: \/-.:[space])
+   - don't check the language extensions if we don't have any non-digits in the string we are checking (excluding delimiters: \/-.:[space])
    - fix typos in the pod documentation, add a link to the german translations
    - add support and more tests for some time-first formats
    - add support for GMT timezone anywhere in the date/time string

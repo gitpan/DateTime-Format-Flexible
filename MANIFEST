@@ -22,6 +22,7 @@ t/ddmmyyyy.t
 t/lang-de.t
 t/lang-es.t
 t/lib/helper.pm
+t/mmyy.t
 t/nanoseconds.t
 t/no_year_base.t
 t/no_year.t

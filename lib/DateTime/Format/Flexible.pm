@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 
 use base 'DateTime::Format::Builder';
 
@@ -24,6 +24,7 @@ my $AMPM = qr{(a\.?m?|p\.?m?)\.?}i;
 
 my $MMDDYYYY = qr{(\d{1,2})$DELIM(\d{1,2})$DELIM(\d{1,4})};
 my $YYYYMMDD = qr{(\d{4})$DELIM(\d{1,2})$DELIM(\d{1,2})};
+my $MMYY = qr{(\d{1,2})${DELIM}(\d{1,2})}; # YEAR must be > 31 unless MMYY
 my $MMDD = qr{(\d{1,2})$DELIM(\d{1,2})};
 my $XMMXDD = qr{X(\d{1,2})X${DELIM}?(\d{1,2})};
 my $DDXMMX = qr{(\d{1,2})${DELIM}?X(\d{1,2})X};
@@ -154,14 +155,27 @@ my $formats =
    postprocess => \&_fix_ampm },
 
  ########################################################
- ##### Month/Year (year must be 4 digits
+ ##### Month/Year
+ ##### year must be 4 digits unless it is > 31
+ ##### or MMYY is true
  # M/YYYY, MM/YYYY
- { length => [6,7], params => $MY, regex  => qr{\A$MMYYYY\z}, postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
-
+ { length => [6,7], params => $MY, regex => qr{\A$MMYYYY\z} },
+ { length => [3..5], params => $MY, regex => qr{\A$MMYY\z},
+   postprocess => [sub {
+       my %args = @_;
+       if ( exists $args{args} )
+       {
+           my %original_args = @{$args{args}};
+           return 1 if ( $original_args{MMYY} );
+       }
+       return 1 if ( $args{parsed}{year} > 31 );
+       return 0;
+   }, \&_fix_year] },
  ########################################################
  ##### Month/Day
  # M/D, M/DD, MM/D, MM/DD
- { length => [3..5], params => $MD, regex  => qr{\A$MMDD\z}, postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
+ { length => [3..5], params => $MD, regex => qr{\A$MMDD\z},
+   postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
 
  { length => [9..14], params => $MDHMS, regex => qr{\A$MMDD\s$HMS\z},
    postprocess => sub { my %args = @_; $args{parsed}{year} = __PACKAGE__->base->year } },
@@ -718,17 +732,19 @@ DateTime::Format::Flexible - DateTime::Format::Flexible - Flexibly parse strings
 =head1 SYNOPSIS
 
   use DateTime::Format::Flexible;
-  my $dt = DateTime::Format::Flexible->parse_datetime( 'January 8, 1999' );
+  my $dt = DateTime::Format::Flexible->parse_datetime(
+      'January 8, 1999'
+  );
   # $dt = a DateTime object set at 1999-01-08T00:00:00
 
 =head1 DESCRIPTION
 
-If you have ever had to use a program that made you type in the date a certain
-way and thought "Why can't the computer just figure out what date I wanted?",
-this module is for you.
+If you have ever had to use a program that made you type in the
+date a certain way and thought "Why can't the computer just figure
+out what date I wanted?", this module is for you.
 
-F<DateTime::Format::Flexible> attempts to take any string you give it and parse
-it into a DateTime object.
+F<DateTime::Format::Flexible> attempts to take any string you give
+it and parse it into a DateTime object.
 
 =head1 USAGE
 
@@ -736,7 +752,8 @@ This module uses F<DateTime::Format::Builder> under the covers.
 
 =head2 parse_datetime
 
-Give it a string and it attempts to parse it and return a DateTime object.
+Give it a string and it attempts to parse it and return a DateTime
+object.
 
 If it cannot it will throw an exception.
 
@@ -747,7 +764,7 @@ If it cannot it will throw an exception.
      strip    => [qr{\.\z}],                  # optional, remove a trailing period
      tz_map   => {EDT => 'America/New_York'}, # optional, map the EDT timezone to America/New_York
      lang     => ['es'],                      # optional, only parse using spanish
-     european => 1                            # optional, catch some cases of DD-MM-YY
+     european => 1,                           # optional, catch some cases of DD-MM-YY
  );
 
 =over 4
@@ -762,7 +779,7 @@ example:
  my $base_dt = DateTime->new( year => 2005, month => 2, day => 1 );
  my $dt = DateTime::Format::Flexible->parse_datetime(
     '18 Mar',
-     base => $base_dt
+     base => $base_dt,
  );
  # $dt is now 2005-03-18T00:00:00
 
@@ -774,78 +791,108 @@ You can pass multiple regexes in an arrayref.
 example:
 
  my $dt = DateTime::Format::Flexible->parse_datetime(
-     '2011-04-26 00:00:00 (registry time)' ,
-     strip => [qr{\(registry time\)\z}] ,
+     '2011-04-26 00:00:00 (registry time)',
+     strip => [qr{\(registry time\)\z}],
  );
  # $dt is now 2011-04-26T00:00:00
 
-This is helpful if you have a load of dates you want to normalize and you know
-of some weird formatting beforehand.
+This is helpful if you have a load of dates you want to normalize
+and you know of some weird formatting beforehand.
 
 =item * C<tz_map> (optional)
 
-map a given timezone to another recognized timezone
+Map a given timezone to another recognized timezone
 Values are given as a hashref.
 
 example:
 
  my $dt = DateTime::Format::Flexible->parse_datetime(
-     '25-Jun-2009 EDT' ,
-     tz_map => {EDT => 'America/New_York'}
+     '25-Jun-2009 EDT',
+     tz_map => {EDT => 'America/New_York'},
  );
  # $dt is now 2009-06-25T00:00:00 with a timezone of America/New_York
 
-This is helpful if you have a load of dates that have timezones that are not
-recognized by F<DateTime::Timezone>.
+This is helpful if you have a load of dates that have timezones that
+are not recognized by F<DateTime::Timezone>.
 
 =item * C<lang> (optional)
 
 Specify the language map plugins to use.
 
-When DateTime::Format::Flexible parses a date with a string in it, it will
-search for a way to convert that string to a number.  By default it will
-search through all the language plugins to search for a match.
+When DateTime::Format::Flexible parses a date with a string in it,
+it will search for a way to convert that string to a number.  By
+default it will search through all the language plugins to search
+for a match.
 
-NOTE: as of 0.22, it will only do this search if it detects a string in the given date.
+NOTE: as of 0.22, it will only do this search if it detects a string
+in the given date.
 
-Setting this lets you limit the scope of the search.
+Setting C<lang> this lets you limit the scope of the search.
 
 example:
 
  my $dt = DateTime::Format::Flexible->parse_datetime(
-     'Wed, Jun 10, 2009' ,
-     lang => ['en']
+     'Wed, Jun 10, 2009',
+     lang => ['en'],
  );
  # $dt is now 2009-06-10T00:00:00
 
-Currently supported languages are english (en), spanish (es) and german (de).
-Contributions, corrections, requests and examples are VERY welcome.
+Currently supported languages are english (en), spanish (es) and
+german (de). Contributions, corrections, requests and examples
+are VERY welcome.
+
 See the F<DateTime::Format::Flexible::lang::en>,
-F<DateTime::Format::Flexible::lang::es>, and F<DateTime::Format::Flexible::lang::de> for examples of the plugins.
+F<DateTime::Format::Flexible::lang::es>, and
+F<DateTime::Format::Flexible::lang::de>
+for examples of the plugins.
 
 =item * C<european> (optional)
 
-If european is set to a true value, an attempt will be made to parse as a
-DD-MM-YYYY date instead of the default MM-DD-YYYY.  There is a chance
-that this will not do the right thing due to ambiguity.
+If european is set to a true value, an attempt will be made to parse
+as a DD-MM-YYYY date instead of the default MM-DD-YYYY.  There is a
+chance that this will not do the right thing due to ambiguity.
 
 example:
 
  my $dt = DateTime::Format::Flexible->parse_datetime(
-     '16/06/2010' , european => 1 ,
+     '16/06/2010' , european => 1,
  );
  # $dt is now 2010-06-16T00:00:00
+
+=item * C<MMYY> (optional)
+
+By default, this module parse 12/10 as December 10th of the current
+year (MM/DD).
+
+If you want it to parse this as MM/YY instead, you can enable the
+C<MMYY> option.
+
+example:
+
+ my $dt = DateTime::Format::Flexible->parse_datetime('12/10');
+ # $dt is now [current year]-12-10T00:00:00
+
+ my $dt = DateTime::Format::Flexible->parse_datetime(
+     '12/10', MMYY => 1,
+ );
+ # $dt is now 2010-12-01T00:00:00
+
+This is useful if you know you are going to be parsing a credit card
+expiration date.
 
 =back
 
 =head2 base
 
-gets/sets the base DateTime for incomplete dates.  Requires a valid DateTime
-object as an argument when setting.
+gets/sets the base DateTime for incomplete dates.  Requires a valid
+DateTime object as an argument when setting.  This defaults to
+DateTime->now.
 
 example:
 
- DateTime::Format::Flexible->base( DateTime->new( year => 2009, month => 6, day => 22 ) );
+ DateTime::Format::Flexible->base( DateTime->new(
+     year => 2009, month => 6, day => 22
+ ));
  my $dt = DateTime::Format::Flexible->parse_datetime( '23:59' );
  # $dt is now 2009-06-22T23:59:00
 
@@ -861,54 +908,55 @@ A small list of supported formats:
 
 =item YYYYMMDDTHHMMSS
 
-=item  YYYYMMDDTHHMM
+=item YYYYMMDDTHHMM
 
-=item  YYYYMMDDTHH
+=item YYYYMMDDTHH
 
-=item  YYYYMMDD
+=item YYYYMMDD
 
-=item  YYYYMM
+=item YYYYMM
 
-=item  MM-DD-YYYY
+=item MM-DD-YYYY
 
-=item  MM-D-YYYY
+=item MM-D-YYYY
 
-=item  MM-DD-YY
+=item MM-DD-YY
 
-=item  M-DD-YY
+=item M-DD-YY
 
-=item  YYYY/DD/MM
+=item YYYY/DD/MM
 
-=item  YYYY/M/DD
+=item YYYY/M/DD
 
-=item  YYYY/MM/D
+=item YYYY/MM/D
 
-=item  M-D
+=item M-D
 
-=item  MM-D
+=item MM-D
 
-=item  M-D-Y
+=item M-D-Y
 
-=item  Month D, YYYY
+=item Month D, YYYY
 
-=item  Mon D, YYYY
+=item Mon D, YYYY
 
-=item  Mon D, YYYY HH:MM:SS
+=item Mon D, YYYY HH:MM:SS
 
-=item  ...
+=item ... thousands more
 
 =back
 
-there are 9000+ variations that are detected correctly in the test files
-(see t/data/* for most of them).  If you can think of any that I do not
-cover, please let me know.
+there are 9000+ variations that are detected correctly in the test
+files (see t/data/* for most of them).  If you can think of any that
+I do not cover, please let me know.
 
 =head1 NOTES
 
 As of version 0.11 you will get a DateTime::Infinite::Future object
-if the passed in date is 'infinity' and a DateTime::Infinite::Past object
-if the passed in date is '-infinity'.  If you are expecting these types of
-strings, you might want to check for 'is_infinite()' from the object returned.
+if the passed in date is 'infinity' and a DateTime::Infinite::Past
+object if the passed in date is '-infinity'.  If you are expecting
+these types of strings, you might want to check for
+'is_infinite()' from the object returned.
 
 example:
 
@@ -918,23 +966,10 @@ example:
       # you have a Infinite object.
  }
 
-The DateTime website http://datetime.perl.org/?Modules as of february 2010
-lists this module under 'Confusing' and recommends the use of
-F<DateTime::Format::Natural>.
-
-Unfortunately I do not agree.  F<DateTime::Format::Natural> fails
-more than 2000 of my parsing tests.  F<DateTime::Format::Flexible> supports
-different types of date/time strings than F<DateTime::Format::Natural>.
-I think there is utility in that can be found in both of them.
-
-The whole goal of F<DateTime::Format::Flexible> is to accept just about
-any crazy date/time string that a user might care to enter.
-F<DateTime::Format::Natural> seems to be a little stricter in what it can
-parse.
-
 =head1 BUGS/LIMITATIONS
 
-You cannot use a 1 or 2 digit year as the first field unless the year is > 31:
+You cannot use a 1 or 2 digit year as the first field unless the
+year is > 31:
 
  YY-MM-DD # not supported if YY is <= 31
  Y-MM-DD  # not supported
@@ -947,7 +982,7 @@ Tom Heady <cpan@punch.net>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2007-2011 Tom Heady.
+Copyright 2007-2012 Tom Heady.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of either:
