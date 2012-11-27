@@ -102,8 +102,11 @@ sub remove_strings
 {
     return (
         # we want to remove ' am ' only when it does not follow a digit
+        # we also don't want to remove am when it follows a capital T,
+        # we can have a capital T when we have already determined the time
+        # part of a string
         # if we just remove ' am ', it removes am/pm designation, losing accuracy
-        qr{(?<!\d)\sam\b}i, # remove ' am ' as in '20. Feb am Mittag'
+        qr{(?<!\d|T)\sam\b}i, # remove ' am ' as in '20. Feb am Mittag'
         # we can also remove it if it is at the beginning
         qr{\A\bam\b}i,
         qr{\bum\b}i,        # remove ' um ' as in '20. Feb um Mitternacht'

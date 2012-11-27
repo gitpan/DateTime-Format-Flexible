@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 
 use base 'DateTime::Format::Builder';
 
@@ -136,6 +136,7 @@ my $formats =
 
  { length => 16, params => $YMDHMS, regex => qr{\A(\d{4})(\d{2})(\d{2})(\d{2}):(\d{2}):(\d{2})\z} },
  { length => 13, params => $YMDHM , regex => qr{\A(\d{4})(\d{2})(\d{2})(\d{2}):(\d{2})\z} },
+ { length => 8 , params => $YMD   , regex => qr{\A(\d{4})(\d{2})(\d{2})\z} },
 
  { length => 10 , params => $YMD   , regex => qr{\AY(\d{2})Y$DELIM(\d{2})$DELIM(\d{2})\z} , postprocess => \&_fix_year } ,
  # 96-06-1800:00:00
@@ -522,7 +523,7 @@ sub _fix_alpha
         }
     }
 
-    printf( "#-->%s<-- (%s) [%s] \n" , $date , length( $date ) , $p->{time_zone}||q{none} ) if $ENV{DFF_DEBUG};
+    printf( "# date: (%s) length: (%s) timezone: [%s] \n" , $date , length( $date ) , $p->{time_zone}||q{none} ) if $ENV{DFF_DEBUG};
     return $date;
 }
 
@@ -561,6 +562,7 @@ sub _parse_timezone
     # set any trailing string timezones.  they cannot start with a digit
     if ( my ( $tz ) = $date =~ m{.+\s+(\D[^\s]+)\z} )
     {
+        printf( "# possible timezone (%s)\n", $tz) if $ENV{DFF_DEBUG};
         my $orig_tz = $tz;
         if ( exists $extra_args->{tz_map}->{$tz} )
         {
@@ -568,6 +570,7 @@ sub _parse_timezone
         }
         if ( DateTime::TimeZone->is_valid_name( $tz ) )
         {
+            printf( "#  timezone matched\n" ) if $ENV{DFF_DEBUG};
             $date =~ s{\Q$orig_tz\E}{};
             $p->{time_zone} = $tz;
             return ( $date , $p );
@@ -629,11 +632,14 @@ sub _fix_ampm
 
     return if not defined $args{parsed}{ampm};
 
+    printf( "# have ampm [%s]\n", $args{parsed}{ampm} ) if $ENV{DFF_DEBUG};
+
     my $ampm = $args{parsed}{ampm};
     delete $args{parsed}{ampm};
 
     if ( $ampm =~ m{a\.?m?\.?}mix )
     {
+        printf( "#   found am hour=[%s]\n", $args{parsed}{hour} ) if $ENV{DFF_DEBUG};
         if( $args{parsed}{hour} == 12 )
         {
             $args{parsed}{hour} = 0;
@@ -642,6 +648,7 @@ sub _fix_ampm
     }
     elsif ( $ampm =~ m{p\.?m?\.?}mix )
     {
+        printf( "#   found pm hour=[%s]\n", $args{parsed}{hour} ) if $ENV{DFF_DEBUG};
         $args{parsed}{hour} += 12;
         if ( $args{parsed}{hour} == 24 )
         {
