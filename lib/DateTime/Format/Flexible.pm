@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 use base 'DateTime::Format::Builder';
 
@@ -35,6 +35,7 @@ my $XMMXDDYYYY = qr{X(\d{1,2})X${DELIM}?(\d{1,2})${DELIM}?(\d{1,4})};
 
 my $HMSMD = [ qw( hour minute second month day ) ];
 my $HMSMDY = [ qw( hour minute second month day year ) ];
+my $HMSYMD = [ qw( hour minute second year month day ) ];
 my $HMSNSMDY = [ qw( hour minute second nanosecond month day year ) ];
 my $HMSDM = [ qw( hour minute second day month ) ];
 my $HMMDY = [ qw( hour minute month day year ) ];
@@ -218,9 +219,13 @@ my $formats =
  # 5:30:25 12101965
  { length => [14..16], params => $HMSMDY, regex => qr{\A${HMS}${DELIM}${MON}${DAY}${YEAR}\z}, postprocess => \&_fix_year },
  { length => [14..19], params => $HMSMDY, regex => qr{\A${HMS}${DELIM}${MMDDYYYY}\z}, postprocess => \&_fix_year },
+
+ { length => [14..19], params => $HMSYMD, regex => qr{\A${HMS}${DELIM}${YYYYMMDD}\z}, postprocess => \&_fix_year },
+
  # 5:30 pm 121065 => 2065-12-01T17:30:00
  { length => [14,18], params => $HMAPMMDDYYYY, regex => qr{\A${HM}\s${AMPM}\s${MON}${DAY}${YEAR}},postprocess => [\&_fix_ampm, \&_fix_year] },
  { length => [16,19], params => $HMAPMMDDYYYY, regex => qr{\A${HM}\s${AMPM}\s${MMDDYYYY}},postprocess => [\&_fix_ampm, \&_fix_year] },
+
 
  ########################################################
  ##### Alpha months
@@ -868,8 +873,8 @@ example:
 
 =item * C<MMYY> (optional)
 
-By default, this module parse 12/10 as December 10th of the current
-year (MM/DD).
+By default, this module will parse 12/10 as December 10th of the
+current year (MM/DD).
 
 If you want it to parse this as MM/YY instead, you can enable the
 C<MMYY> option.

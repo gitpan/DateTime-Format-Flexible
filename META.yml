@@ -25,4 +25,4 @@ requires:
   Module::Pluggable: 0
   Test::MockTime: 0
   Test::Simple: 0.44
-version: 0.24
+version: 0.25

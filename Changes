@@ -1,5 +1,9 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.25 Mon Mar 04 2013
+   - support "HH:MM::SS timezone YYYY/MM/DD"
+     - thanks Kevin Zwack
+
 0.24 Mon Nov 26 2012
    - fix removal of 'am' in the german language file when we already know what part is the time part
    - fix removal of 'st' when not preceded by a digit
@@ -45,7 +49,7 @@ Revision history for Perl module DateTime::Format::Flexible
    - more formats supported
    - support timezone offsets that are not at the end of the datetime string.
      - they must be 4 digits and begin with a plus or minus
-     - thanks snarkyboojum: http://use.perl.org/~snarkyboojum/journal/40297
+     - thanks snarkyboojum: http://use.perl.org/use.perl.org/_snarkyboojum/journal/40297.html
    - better support for dates like 'December 1st'
    - POD formatting fixes
    - support 'Oct.26, 2010'.
