@@ -1,5 +1,10 @@
 Revision history for Perl module DateTime::Format::Flexible
 
+0.26 Tue Apr 22 2014
+  - support "MM/DD/YYYY HH:MM" (missing seconds),
+  - support "EEE MMM dd HH:mm:ss z yyyy" (UTC timezone inside string)
+    - thanks David White rt #94911
+
 0.25 Mon Mar 04 2013
    - support "HH:MM::SS timezone YYYY/MM/DD"
      - thanks Kevin Zwack

@@ -2,7 +2,7 @@ package DateTime::Format::Flexible;
 use strict;
 use warnings;
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 
 use base 'DateTime::Format::Builder';
 
@@ -60,6 +60,7 @@ my $MDHMS = [ qw( month day hour minute second ) ];
 my $MDHMSAP = [ qw( month day hour minute second ampm ) ];
 my $MYHMS = [ qw( month year hour minute second ) ];
 my $MYHMSAP = [ qw( month year hour minute second ampm ) ];
+my $MDYHM = [ qw( month day year hour minute second ) ];
 my $MDYHMS = [ qw( month day year hour minute second ) ];
 my $MDYHMAP = [ qw( month day year hour minute ampm ) ];
 my $MDYHMSAP = [ qw( month day year hour minute second ampm ) ];
@@ -111,6 +112,9 @@ my $formats =
  { length => [11..19], params => $MDYHMS,   regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HMS\z},         postprocess => \&_fix_year },
  { length => [11..20], params => $MDYHMAP,  regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HM\s?$AMPM\z},  postprocess => [ \&_fix_ampm , \&_fix_year ] } ,
  { length => [14..22], params => $MDYHMSAP, regex => qr{\A${MON}${DELIM}${DAY}${DELIM}${YEAR}\s$HMS\s?$AMPM\z}, postprocess => [ \&_fix_ampm , \&_fix_year ] } ,
+
+ # 02/28/2014 14:30 (missing seconds)
+ { length => [14..16], params => $MDYHM,    regex => qr{\A$MMDDYYYY\s$HM\z}, postprocess => \&_set_default_seconds } ,
 
  ########################################################
  ##### Year/Month/Day
@@ -546,10 +550,12 @@ sub _parse_timezone
         }
     }
 
-    # search for GMT inside the string
+    # search for GMT/UTC inside the string
     # must be surrounded by spaces
     # 5:30 pm GMT 121065
-    if ( my ( $tz ) = $date =~ m{\s(GMT)\s}mx )
+    # Tue Feb 28 14:30:00 UTC 2014
+
+    if ( my ( $tz ) = $date =~ m{\s(GMT|UTC)\s}mx )
     {
         $date =~ s{\Q$tz\E}{};
         $p->{time_zone} = 'UTC';
@@ -661,6 +667,13 @@ sub _fix_ampm
         }
         return 1;
     }
+    return 1;
+}
+
+sub _set_default_seconds
+{
+    my %args = @_;
+    $args{parsed}{second} = 0;
     return 1;
 }
 
